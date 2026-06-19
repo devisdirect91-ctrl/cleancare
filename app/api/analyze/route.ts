@@ -53,7 +53,11 @@ export async function POST(request: Request) {
     .upload(photoPath, photoBuffer, { contentType: `image/${extension}` })
 
   if (uploadError) {
-    return NextResponse.json({ error: "Échec de l'upload de la photo" }, { status: 500 })
+    console.error('Supabase storage upload error:', uploadError)
+    return NextResponse.json(
+      { error: "Échec de l'upload de la photo", reason: uploadError.message },
+      { status: 500 }
+    )
   }
 
   let result
@@ -105,7 +109,11 @@ export async function POST(request: Request) {
     .single()
 
   if (insertError) {
-    return NextResponse.json({ error: "Échec de l'enregistrement" }, { status: 500 })
+    console.error('Supabase insert error:', insertError)
+    return NextResponse.json(
+      { error: "Échec de l'enregistrement", reason: insertError.message },
+      { status: 500 }
+    )
   }
 
   return NextResponse.json({ analysis: { ...analysis, full_result: result } })
