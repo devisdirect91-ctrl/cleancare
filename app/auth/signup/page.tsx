@@ -16,13 +16,17 @@ export default function SignupPage() {
     setLoading(true)
     setError(null)
     const supabase = createClient()
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     })
     setLoading(false)
     if (signUpError) {
       setError(signUpError.message)
+      return
+    }
+    if (!signUpData.session) {
+      setError('Confirme ton adresse e-mail via le lien que nous venons de t’envoyer, puis connecte-toi.')
       return
     }
     router.push('/dashboard')

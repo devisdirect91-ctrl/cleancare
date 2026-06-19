@@ -99,13 +99,20 @@ export default function Home() {
     setSignupError(null)
     try {
       const supabase = createClient()
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
       })
 
       if (signUpError) {
         setSignupError(signUpError.message)
+        return
+      }
+
+      if (!signUpData.session) {
+        setSignupError(
+          'Confirme ton adresse e-mail via le lien que nous venons de t’envoyer, puis connecte-toi pour débloquer ton diagnostic.'
+        )
         return
       }
 
