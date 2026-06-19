@@ -124,6 +124,7 @@ async function handleAnalyze(request: Request) {
       routine_morning: result.routine_morning,
       routine_evening: result.routine_evening,
       recommended_products: recommendedProducts,
+      full_result: result,
     })
     .select()
     .single()
