@@ -6,6 +6,18 @@ import { createClient } from '@/lib/supabase/server'
 const TRIAL_ANALYSIS_LIMIT = 3
 
 export async function POST(request: Request) {
+  try {
+    return await handleAnalyze(request)
+  } catch (err) {
+    console.error('Unhandled error in /api/analyze:', err)
+    const message = err instanceof Error ? err.message : String(err)
+    const stack = err instanceof Error ? err.stack : undefined
+    // TEMPORARY: surfacing the raw error for debugging — remove once stable.
+    return NextResponse.json({ error: 'Erreur serveur', debug: { message, stack } }, { status: 500 })
+  }
+}
+
+async function handleAnalyze(request: Request) {
   const supabase = createClient()
 
   const { data: userData, error: authError } = await supabase.auth.getUser()
