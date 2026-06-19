@@ -9,7 +9,16 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        display: ['var(--font-fraunces)', 'serif'],
+        sans: ['var(--font-inter)', 'sans-serif'],
+        mono: ['var(--font-jetbrains)', 'monospace'],
+      },
       colors: {
+        cream: '#FAF6EE',
+        terracotta: '#C8755A',
+        charcoal: '#1F1B17',
+        stone: '#8B8378',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
