@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { NextResponse } from 'next/server'
-import { analyzeSkin, RateLimitedError, type RoutineStep } from '@/lib/llm/analyze'
+import { analyzeSkin, LLMConfigError, RateLimitedError, type RoutineStep } from '@/lib/llm/analyze'
 import { createClient } from '@/lib/supabase/server'
 
 const TRIAL_ANALYSIS_LIMIT = 3
@@ -82,6 +82,14 @@ async function handleAnalyze(request: Request) {
         { status: 429 }
       )
     }
+    if (err instanceof LLMConfigError) {
+      console.error('LLM config error:', err.message)
+      return NextResponse.json(
+        { error: 'Service IA mal configuré (clé API manquante ou invalide)' },
+        { status: 500 }
+      )
+    }
+    console.error('Unexpected error from analyzeSkin:', err)
     return NextResponse.json({ error: 'Analyse impossible, réessaie.' }, { status: 500 })
   }
 

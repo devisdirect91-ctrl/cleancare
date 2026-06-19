@@ -54,6 +54,7 @@ export interface SkinAnalysisError {
 }
 
 export class RateLimitedError extends Error {}
+export class LLMConfigError extends Error {}
 
 function parseDataUrl(dataUrl: string): { mediaType: string; base64: string } {
   const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/)
@@ -92,6 +93,9 @@ export async function analyzeSkin(
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
       throw new RateLimitedError('Rate limited')
+    }
+    if (err instanceof Anthropic.AuthenticationError) {
+      throw new LLMConfigError('ANTHROPIC_API_KEY est manquante ou invalide')
     }
     throw err
   }
