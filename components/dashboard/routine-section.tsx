@@ -1,14 +1,29 @@
+'use client'
+
+import { useEffect } from 'react'
 import { ExternalLink } from 'lucide-react'
+import { trackEvent } from '@/lib/analytics/posthog'
 import type { RoutineStep } from '@/lib/llm/analyze'
 import type { RecommendedProduct } from '@/types/analysis'
 
 interface RoutineSectionProps {
   title: string
+  routineTime: 'morning' | 'evening'
   steps: RoutineStep[]
   products: RecommendedProduct[]
 }
 
-export function RoutineSection({ title, steps, products }: RoutineSectionProps) {
+export function RoutineSection({ title, routineTime, steps, products }: RoutineSectionProps) {
+  useEffect(() => {
+    const hour = new Date().getHours()
+    const timeOfDay = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'
+
+    trackEvent('routine_viewed', {
+      routine_time: routineTime,
+      time_of_day: timeOfDay,
+    })
+  }, [routineTime])
+
   return (
     <section>
       <h2 className="font-display text-2xl italic text-charcoal">{title}</h2>
@@ -37,7 +52,11 @@ export function RoutineSection({ title, steps, products }: RoutineSectionProps) 
               {stepProducts.length > 0 && (
                 <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {stepProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      routineTime={routineTime}
+                    />
                   ))}
                 </div>
               )}
@@ -49,7 +68,24 @@ export function RoutineSection({ title, steps, products }: RoutineSectionProps) 
   )
 }
 
-function ProductCard({ product }: { product: RecommendedProduct }) {
+function ProductCard({
+  product,
+  routineTime,
+}: {
+  product: RecommendedProduct
+  routineTime: 'morning' | 'evening'
+}) {
+  function handleProductClick() {
+    trackEvent('product_clicked', {
+      product_id: product.id,
+      product_name: product.name,
+      brand: product.brand,
+      category: product.category,
+      price: product.price_eur,
+      routine_time: routineTime,
+    })
+  }
+
   return (
     <div className="rounded-xl border border-charcoal/10 bg-cream/50 p-3">
       <div className="aspect-square overflow-hidden rounded-lg bg-white">
@@ -78,6 +114,7 @@ function ProductCard({ product }: { product: RecommendedProduct }) {
             href={product.affiliate_url}
             target="_blank"
             rel="noopener noreferrer nofollow"
+            onClick={handleProductClick}
             className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-terracotta hover:underline"
           >
             Voir <ExternalLink className="h-3 w-3" />

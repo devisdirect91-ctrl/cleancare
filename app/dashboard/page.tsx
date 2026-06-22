@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { CheckoutSuccessTracker } from '@/components/analytics/CheckoutSuccessTracker'
+import { DashboardTracker } from '@/components/analytics/DashboardTracker'
 import { AnonymousPaywall } from '@/components/dashboard/anonymous-paywall'
 import { getConcernInfo } from '@/components/dashboard/concern-icon'
 import { FollowupActions } from '@/components/dashboard/followup-actions'
@@ -73,6 +74,10 @@ export default async function DashboardPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-16 pb-28 sm:py-20">
       <CheckoutSuccessTracker />
+      <DashboardTracker
+        subscriptionStatus={profile.subscription_status ?? 'trialing'}
+        createdAt={profile.created_at}
+      />
       {/* Header */}
       <header>
         <p className="font-mono text-xs uppercase tracking-widest text-terracotta">
@@ -142,11 +147,13 @@ export default async function DashboardPage() {
       <div className="mt-12 space-y-12">
         <RoutineSection
           title="Ta routine matin"
+          routineTime="morning"
           steps={analysis.routine_morning ?? []}
           products={products}
         />
         <RoutineSection
           title="Ta routine soir"
+          routineTime="evening"
           steps={analysis.routine_evening ?? []}
           products={products}
         />
@@ -186,7 +193,10 @@ export default async function DashboardPage() {
 
       {/* Section 6 — Suivi */}
       <div className="mt-12">
-        <FollowupActions shareImageUrl={`/api/og?id=${analysis.id}`} />
+        <FollowupActions
+          shareImageUrl={`/api/og?id=${analysis.id}`}
+          analysisCreatedAt={analysis.created_at}
+        />
       </div>
 
       {!isPremium && (

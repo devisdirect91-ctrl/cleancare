@@ -2,13 +2,17 @@
 
 import { Share2, CalendarClock } from 'lucide-react'
 import { toast } from 'sonner'
+import { trackEvent } from '@/lib/analytics/posthog'
 
 interface FollowupActionsProps {
   shareImageUrl: string
+  analysisCreatedAt?: string
 }
 
-export function FollowupActions({ shareImageUrl }: FollowupActionsProps) {
+export function FollowupActions({ shareImageUrl, analysisCreatedAt }: FollowupActionsProps) {
   async function handleShare() {
+    trackEvent('share_button_clicked')
+
     try {
       const res = await fetch(shareImageUrl)
       const blob = await res.blob()
@@ -19,16 +23,28 @@ export function FollowupActions({ shareImageUrl }: FollowupActionsProps) {
           files: [file],
           title: 'Mon diagnostic CleanCare',
         })
+        trackEvent('send_card_shared', { platform: 'native_share' })
         return
       }
 
       window.open(shareImageUrl, '_blank')
+      trackEvent('send_card_shared', { platform: 'open_image' })
     } catch {
       window.open(shareImageUrl, '_blank')
     }
   }
 
   function handleReminder() {
+    const daysSinceLast = analysisCreatedAt
+      ? Math.floor(
+          (Date.now() - new Date(analysisCreatedAt).getTime()) / (1000 * 60 * 60 * 24)
+        )
+      : null
+
+    trackEvent('new_analysis_initiated', {
+      days_since_last: daysSinceLast,
+    })
+
     toast.success('On te rappelle dans 30 jours pour refaire le point sur ta peau.')
   }
 
