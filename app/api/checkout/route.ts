@@ -28,20 +28,25 @@ export async function POST(request: Request) {
 
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('stripe_customer_id, email, subscription_status')
+      .select('stripe_customer_id, email, subscription_status, subscription_id')
       .eq('id', user.id)
       .single()
 
     const status = profile?.subscription_status as string | undefined
-    const blockedStatuses = ['active', 'trialing', 'lifetime']
-    if (status && blockedStatuses.includes(status)) {
-      const isLifetimeUpgrade = status === 'active' && plan === 'lifetime'
-      if (!isLifetimeUpgrade) {
-        return NextResponse.json(
-          { error: 'Tu as déjà un abonnement actif' },
-          { status: 400 }
-        )
-      }
+    const hasStripeSubscription = Boolean(profile?.subscription_id)
+
+    // Block only users with a real Stripe subscription (subscription_id exists).
+    // 'trialing' without a subscription_id = free in-app trial, allow checkout.
+    const isBlocked =
+      hasStripeSubscription &&
+      (status === 'active' || status === 'trialing' || status === 'lifetime')
+    const isLifetimeUpgrade = status === 'active' && plan === 'lifetime' && hasStripeSubscription
+
+    if (isBlocked && !isLifetimeUpgrade) {
+      return NextResponse.json(
+        { error: 'Tu as déjà un abonnement actif' },
+        { status: 400 }
+      )
     }
 
     let customerId = profile?.stripe_customer_id ?? null
