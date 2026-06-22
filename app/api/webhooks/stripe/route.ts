@@ -318,7 +318,7 @@ export async function POST(req: Request) {
         userId = await handleInvoiceSucceeded(invoice)
         if (userId && invoice.billing_reason === 'subscription_cycle') {
           await trackServerEvent(userId, 'trial_converted', {
-            plan: invoice.lines?.data[0]?.price?.id,
+            plan: (invoice.lines?.data[0] as unknown as { price?: { id?: string } })?.price?.id ?? null,
             value: (invoice.amount_paid ?? 0) / 100,
           })
         }
