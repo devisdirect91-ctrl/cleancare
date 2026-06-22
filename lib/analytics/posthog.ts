@@ -12,7 +12,7 @@ export function initPostHog() {
   }
 
   posthog.init(apiKey, {
-    api_host: 'https://eu.posthog.com',
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.posthog.com',
     person_profiles: 'identified_only',
     capture_pageview: false,
     capture_pageleave: true,
