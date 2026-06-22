@@ -9,6 +9,7 @@ export type SubscriptionStatus =
 export interface Profile {
   id: string
   email: string
+  first_name: string | null
   created_at: string
   trial_ends_at: string
   subscription_status: SubscriptionStatus
