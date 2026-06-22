@@ -39,7 +39,7 @@ export function PaywallScreen({
 
   async function startCheckout(selected: Plan | 'lifetime') {
     if (anonymous) {
-      window.location.href = '/auth/signup'
+      window.location.href = `/auth/signup?redirectTo=/paywall?plan=${selected}`
       return
     }
     setLoading(selected)

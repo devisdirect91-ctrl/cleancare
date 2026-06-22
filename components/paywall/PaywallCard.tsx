@@ -31,7 +31,7 @@ export function PaywallCard() {
       const data = await response.json()
 
       if (response.status === 401) {
-        window.location.href = '/auth/signin?redirect=/paywall'
+        window.location.href = `/auth/signup?redirectTo=/paywall?plan=${plan}`
         return
       }
 
