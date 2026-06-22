@@ -1,11 +1,14 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo') ?? '/dashboard'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,17 +18,21 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
     const supabase = createClient()
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
+
     setLoading(false)
+
     if (signInError) {
       setError(signInError.message)
       return
     }
-    router.push('/dashboard')
+
+    router.push(redirectTo)
   }
 
   async function handleGoogle() {
@@ -33,7 +40,7 @@ export default function LoginPage() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirectTo=/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
       },
     })
   }
@@ -76,10 +83,21 @@ export default function LoginPage() {
       </button>
       <p className="mt-6 text-center text-sm text-stone">
         Pas encore de compte ?{' '}
-        <a href="/auth/signup" className="text-terracotta underline">
+        <a
+          href={`/auth/signup?redirectTo=${encodeURIComponent(redirectTo)}`}
+          className="text-terracotta underline"
+        >
           Créer un compte
         </a>
       </p>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }

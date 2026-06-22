@@ -1,11 +1,14 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo') ?? '/dashboard'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,21 +18,31 @@ export default function SignupPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
     const supabase = createClient()
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
+      },
     })
+
     setLoading(false)
+
     if (signUpError) {
       setError(signUpError.message)
       return
     }
+
     if (!signUpData.session) {
-      setError('Confirme ton adresse e-mail via le lien que nous venons de t’envoyer, puis connecte-toi.')
+      setError(
+        "Confirme ton adresse e-mail via le lien que nous venons de t’envoyer, puis connecte-toi."
+      )
       return
     }
-    router.push('/dashboard')
+
+    router.push(redirectTo)
   }
 
   async function handleGoogle() {
@@ -37,14 +50,16 @@ export default function SignupPage() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirectTo=/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
       },
     })
   }
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <h1 className="font-display text-2xl text-charcoal">Créer un compte</h1>
+      <h1 className="font-display text-2xl text-charcoal">
+        Créer un compte
+      </h1>
       <form className="mt-6 space-y-3" onSubmit={handleSubmit}>
         <input
           type="email"
@@ -80,10 +95,21 @@ export default function SignupPage() {
       </button>
       <p className="mt-6 text-center text-sm text-stone">
         Déjà un compte ?{' '}
-        <a href="/auth/login" className="text-terracotta underline">
+        <a
+          href={`/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`}
+          className="text-terracotta underline"
+        >
           Connexion
         </a>
       </p>
     </main>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   )
 }
