@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { AnalyzingOverlay } from '@/components/landing/analyzing-overlay'
 import { UploadZone } from '@/components/landing/upload-zone'
 import { ANONYMOUS_ANALYSIS_KEY } from '@/components/dashboard/anonymous-paywall'
-import { trackEvent } from '@/lib/analytics'
+import { trackEvent } from '@/lib/analytics/posthog'
 
 type FlowState = 'idle' | 'analyzing'
 
@@ -23,13 +23,21 @@ export default function UploadStep() {
       return
     }
     setFirstName(stored)
-    trackEvent('onboarding_upload_viewed')
+    trackEvent('upload_step_viewed')
   }, [router])
 
-  async function handleFileSelected(dataUrl: string) {
+  async function handleFileSelected(dataUrl: string, file: File) {
+    trackEvent('photo_selected', {
+      file_size_kb: Math.round(file.size / 1024),
+      file_type: file.type,
+    })
+
     setImage(dataUrl)
     setFlowState('analyzing')
-    trackEvent('onboarding_upload_started')
+
+    const startTime = Date.now()
+    trackEvent('photo_upload_started')
+    trackEvent('analysis_started')
 
     try {
       const res = await fetch('/api/analyze', {
@@ -39,17 +47,23 @@ export default function UploadStep() {
       })
 
       const body = await res.json().catch(() => null)
+      const duration_ms = Date.now() - startTime
 
       if (!res.ok) {
-        toast.error(body?.error ?? 'Une erreur est survenue, réessaie.')
+        const reason = body?.error ?? 'Une erreur est survenue, réessaie.'
+        trackEvent('photo_upload_failed', { reason })
+        toast.error(reason)
         setFlowState('idle')
         return
       }
 
       sessionStorage.setItem(ANONYMOUS_ANALYSIS_KEY, JSON.stringify(body.analysis))
-      trackEvent('onboarding_upload_completed')
+      trackEvent('photo_uploaded', { duration_ms })
+      trackEvent('analysis_completed', { duration_ms })
       router.push('/paywall')
-    } catch {
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : 'Erreur réseau'
+      trackEvent('photo_upload_failed', { reason })
       toast.error('Une erreur est survenue, réessaie.')
       setFlowState('idle')
     }
@@ -71,27 +85,22 @@ export default function UploadStep() {
 
       {/* Main content */}
       <div className="mx-auto w-full max-w-md flex-1 py-12">
-        {/* Eyebrow */}
         <p className="mb-5 font-mono text-[10px] uppercase tracking-[0.25em] text-terracotta">
           À toi de jouer, {firstName}
         </p>
 
-        {/* Title */}
         <h1 className="mb-4 font-display text-[36px] font-medium leading-[1.08] tracking-tight text-charcoal">
           Une photo, et on s&apos;occupe{' '}
           <em className="font-medium italic text-terracotta">du reste.</em>
         </h1>
 
-        {/* Subtitle */}
         <p className="mb-10 text-[16px] leading-relaxed text-[#4A4238]">
           {firstName}, prends une photo nette de ton visage en lumière naturelle.
           Notre IA va analyser ta peau en 30 secondes.
         </p>
 
-        {/* Upload zone */}
         <UploadZone onFileSelected={handleFileSelected} />
 
-        {/* Privacy annotation */}
         <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.15em] text-stone">
           Pas de stress {firstName}, on supprime ta photo après l&apos;analyse.
         </p>

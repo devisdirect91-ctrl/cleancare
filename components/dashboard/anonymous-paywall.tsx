@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getConcernInfo } from '@/components/dashboard/concern-icon'
 import { PaywallScreen } from '@/components/dashboard/paywall-screen'
+import { trackEvent } from '@/lib/analytics/posthog'
 import type { AnalysisRow } from '@/types/analysis'
 
 export const ANONYMOUS_ANALYSIS_KEY = 'cleancare:lastAnalysis'
@@ -29,8 +30,17 @@ export function AnonymousPaywall() {
 
   useEffect(() => {
     const raw = sessionStorage.getItem(ANONYMOUS_ANALYSIS_KEY)
-    setAnalysis(raw ? JSON.parse(raw) : null)
+    const parsed = raw ? JSON.parse(raw) : null
+    setAnalysis(parsed)
     setFirstName(sessionStorage.getItem('user_first_name') ?? '')
+
+    if (parsed) {
+      trackEvent('result_viewed', {
+        has_subscription: false,
+        skin_type: parsed.skin_type ?? null,
+        concerns_count: parsed.concerns?.length ?? 0,
+      })
+    }
   }, [])
 
   if (analysis === undefined) return null

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { trackEvent } from '@/lib/analytics'
+import { trackEvent } from '@/lib/analytics/posthog'
 
 const NAME_REGEX = /^[a-zA-ZÀ-ÿ\-' ]+$/
 const MIN = 2
@@ -26,7 +26,6 @@ export default function NameStep() {
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  // On mount: pre-fill from storage + redirect if DB already has first_name
   useEffect(() => {
     async function init() {
       const stored = sessionStorage.getItem('user_first_name')
@@ -53,8 +52,7 @@ export default function NameStep() {
       }
 
       setChecking(false)
-      trackEvent('onboarding_name_viewed')
-      // Delay focus so the keyboard doesn't fire before the page renders
+      trackEvent('name_step_viewed')
       setTimeout(() => inputRef.current?.focus(), 120)
     }
 
@@ -85,7 +83,7 @@ export default function NameStep() {
     sessionStorage.setItem('user_first_name', formatted)
     localStorage.setItem('user_first_name', formatted)
 
-    trackEvent('onboarding_name_completed', { name_length: formatted.length })
+    trackEvent('name_step_completed', { name_length: formatted.length })
     router.push('/onboarding/upload')
   }
 
@@ -113,19 +111,16 @@ export default function NameStep() {
       {/* Main block */}
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-16">
         <form onSubmit={handleSubmit} noValidate>
-          {/* Title */}
           <h1 className="mb-4 font-display text-[38px] font-medium leading-[1.08] tracking-tight text-charcoal">
             Faisons{' '}
             <em className="font-medium italic text-terracotta">connaissance</em>
           </h1>
 
-          {/* Subtitle */}
           <p className="mb-10 text-[16px] leading-relaxed text-[#4A4238]">
             Notre analyse est personnalisée. Pour bien faire les choses,
             dis-nous comment t&apos;appeler.
           </p>
 
-          {/* Input */}
           <div className="mb-2">
             <input
               ref={inputRef}
@@ -153,7 +148,6 @@ export default function NameStep() {
             )}
           </div>
 
-          {/* CTA */}
           <button
             type="submit"
             disabled={!canSubmit}

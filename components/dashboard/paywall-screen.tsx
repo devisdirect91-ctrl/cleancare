@@ -1,7 +1,8 @@
 'use client'
 
 import { Check, Lock } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { trackEvent } from '@/lib/analytics/posthog'
 
 interface PaywallScreenProps {
   name: string
@@ -36,10 +37,29 @@ export function PaywallScreen({
 }: PaywallScreenProps) {
   const [plan, setPlan] = useState<Plan>('yearly')
   const [loading, setLoading] = useState<Plan | 'lifetime' | null>(null)
+  const pricingRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = pricingRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          trackEvent('paywall_viewed', {
+            scroll_depth_percent: Math.round(entry.intersectionRatio * 100),
+          })
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.5 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   async function startCheckout(selected: Plan | 'lifetime') {
     if (anonymous) {
-      window.location.href = `/auth/signup?redirectTo=/paywall?plan=${selected}`
+      window.location.href = `/auth/signup?redirectTo=${encodeURIComponent(`/paywall?plan=${selected}`)}`
       return
     }
     setLoading(selected)
@@ -157,7 +177,7 @@ export function PaywallScreen({
         </div>
 
         {/* Paywall card */}
-        <div className="mt-7">
+        <div ref={pricingRef} className="mt-7">
           <div className="relative rounded-[24px] border-[1.5px] border-[#E8C9BC] bg-gradient-to-b from-[#FFFCF6] to-[#EDE3D0] p-6 text-center shadow-[0_20px_50px_-15px_rgba(200,117,90,0.25)]">
             <div className="relative mx-auto mb-3.5 flex h-12 w-12 items-center justify-center rounded-full bg-[#1F1B16] before:absolute before:-inset-1 before:rounded-full before:border before:border-dashed before:border-terracotta">
               <Lock className="h-5 w-5 text-[#FFFCF6]" strokeWidth={2} />

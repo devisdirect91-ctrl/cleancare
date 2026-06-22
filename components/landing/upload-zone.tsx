@@ -4,7 +4,7 @@ import { Camera } from 'lucide-react'
 import { useRef } from 'react'
 
 interface UploadZoneProps {
-  onFileSelected: (dataUrl: string) => void
+  onFileSelected: (dataUrl: string, file: File) => void
 }
 
 export function UploadZone({ onFileSelected }: UploadZoneProps) {
@@ -15,7 +15,7 @@ export function UploadZone({ onFileSelected }: UploadZoneProps) {
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
-      if (typeof reader.result === 'string') onFileSelected(reader.result)
+      if (typeof reader.result === 'string') onFileSelected(reader.result, file)
     }
     reader.readAsDataURL(file)
   }

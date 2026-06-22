@@ -1,8 +1,9 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { trackEvent, identifyUser } from '@/lib/analytics/posthog'
 
 function SignupForm() {
   const router = useRouter()
@@ -14,10 +15,16 @@ function SignupForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    trackEvent('signup_modal_viewed')
+  }, [])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    trackEvent('signup_started', { method: 'email' })
 
     const supabase = createClient()
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -31,21 +38,42 @@ function SignupForm() {
     setLoading(false)
 
     if (signUpError) {
+      trackEvent('signup_failed', { reason: signUpError.message })
       setError(signUpError.message)
       return
     }
 
     if (!signUpData.session) {
       setError(
-        "Confirme ton adresse e-mail via le lien que nous venons de t’envoyer, puis connecte-toi."
+        "Confirme ton adresse e-mail via le lien que nous venons de t'envoyer, puis connecte-toi."
       )
       return
+    }
+
+    if (signUpData.user) {
+      const firstName =
+        sessionStorage.getItem('user_first_name') ??
+        localStorage.getItem('user_first_name') ??
+        ''
+      trackEvent('signup_completed', {
+        method: 'email',
+        utm_source: localStorage.getItem('first_utm_source') || 'direct',
+        utm_campaign: localStorage.getItem('first_utm_campaign') || '',
+      })
+      identifyUser(signUpData.user.id, {
+        email: signUpData.user.email,
+        first_name: firstName,
+        signup_source: localStorage.getItem('first_utm_source') || 'direct',
+        signup_campaign: localStorage.getItem('first_utm_campaign') || '',
+        signup_date: new Date().toISOString(),
+      })
     }
 
     router.push(redirectTo)
   }
 
   async function handleGoogle() {
+    trackEvent('signup_started', { method: 'google' })
     const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       provider: 'google',

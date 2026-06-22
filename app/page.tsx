@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ExampleResultModal } from '@/components/landing/example-result-modal'
+import { trackEvent } from '@/lib/analytics/posthog'
 
 const STEPS = [
   {
@@ -24,7 +25,7 @@ const STEPS = [
 
 const CRITERIA = [
   'Type de peau',
-  'Niveau d’hydratation',
+  'Niveau d'hydratation',
   'Pores et texture',
   'Imperfections',
   'Sous-ton (chaud / froid / neutre)',
@@ -35,13 +36,13 @@ const TESTIMONIALS = [
   {
     name: 'Léa, 24 ans',
     quote:
-      'J’ai enfin compris pourquoi rien ne marchait sur ma peau. La routine proposée a changé la donne en trois semaines.',
+      'J'ai enfin compris pourquoi rien ne marchait sur ma peau. La routine proposée a changé la donne en trois semaines.',
     tag: 'Type de peau : mixte',
   },
   {
     name: 'Camille, 31 ans',
     quote:
-      'Le diagnostic est bluffant de précision, et l’interface est tellement agréable à utiliser.',
+      'Le diagnostic est bluffant de précision, et l'interface est tellement agréable à utiliser.',
     tag: 'Type de peau : sèche',
   },
   {
@@ -55,25 +56,32 @@ const TESTIMONIALS = [
 const FAQ = [
   {
     q: 'Mes photos sont-elles stockées ?',
-    a: 'Non, jamais sans ton accord explicite. Elles sont traitées le temps de l’analyse puis supprimées, sauf si tu choisis de les conserver dans ton espace personnel.',
+    a: 'Non, jamais sans ton accord explicite. Elles sont traitées le temps de l'analyse puis supprimées, sauf si tu choisis de les conserver dans ton espace personnel.',
   },
   {
-    q: 'C’est gratuit ?',
-    a: 'L’analyse initiale et l’essai de 7 jours sont gratuits. Tu peux ensuite continuer avec un abonnement mensuel, sans engagement.',
+    q: 'C'est gratuit ?',
+    a: 'L'analyse initiale et l'essai de 7 jours sont gratuits. Tu peux ensuite continuer avec un abonnement mensuel, sans engagement.',
   },
   {
-    q: 'C’est précis ?',
+    q: 'C'est précis ?',
     a: 'Notre IA est entraînée sur des milliers de profils cutanés validés par des professionnels et évalue 14 critères distincts.',
   },
   {
     q: 'Ça remplace une dermatologue ?',
-    a: 'Non. CleanCare n’est pas un dispositif médical. Pour tout problème de peau persistant, consulte une dermatologue.',
+    a: 'Non. CleanCare n'est pas un dispositif médical. Pour tout problème de peau persistant, consulte une dermatologue.',
   },
 ]
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [showExample, setShowExample] = useState(false)
+
+  useEffect(() => {
+    trackEvent('landing_viewed', {
+      source: localStorage.getItem('first_utm_source') || 'direct',
+      referrer: document.referrer || 'direct',
+    })
+  }, [])
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16 sm:py-24">
@@ -158,7 +166,7 @@ export default function Home() {
       {/* SECTION 4 — Ce qu'on analyse */}
       <section className="mt-20">
         <h2 className="text-center font-display text-2xl text-charcoal">
-          Ce qu’on analyse
+          Ce qu'on analyse
         </h2>
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {CRITERIA.map((c) => (
@@ -262,6 +270,7 @@ function StartCta() {
   return (
     <Link
       href="/onboarding/name"
+      onClick={() => trackEvent('landing_cta_clicked')}
       className="inline-flex w-full max-w-sm items-center justify-center rounded-full bg-charcoal px-8 py-4 font-sans text-[15px] font-bold text-cream shadow-[0_8px_20px_-6px_rgba(31,27,22,0.3)] transition-opacity hover:opacity-80"
     >
       Commencer mon diagnostic &rarr;
