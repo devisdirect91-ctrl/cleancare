@@ -1,5 +1,4 @@
-import Link from 'next/link'
-import { PaywallCard } from '@/components/paywall/PaywallCard'
+import { AnonymousPaywall } from '@/components/dashboard/anonymous-paywall'
 import { PaywallScreen } from '@/components/dashboard/paywall-screen'
 import {
   buildPaywallProps,
@@ -14,43 +13,19 @@ export default async function PaywallPage() {
   const { data: userData } = await supabase.auth.getUser()
   const user = userData.user
 
-  // Anonymous user — show standalone pricing card without analysis data
+  // Anonymous user — read analysis from sessionStorage and show PaywallScreen
   if (!user) {
-    return (
-      <main className="min-h-screen bg-[#F4ECDD]">
-        <PaywallCard />
-      </main>
-    )
+    return <AnonymousPaywall />
   }
 
   const { profile, analysis } = await getLatestDiagnostic(supabase, user.id)
 
-  // No analysis yet — show standalone pricing card
+  // No analysis yet — fall back to anonymous flow (also handles empty state)
   if (!analysis || !profile) {
-    return (
-      <main className="min-h-screen bg-[#F4ECDD]">
-        <div className="pt-10 text-center">
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-stone">
-            Mira Premium
-          </p>
-          <h1 className="mt-3 font-display text-[28px] leading-[1.1] tracking-tight text-charcoal">
-            Ta peau mérite
-            <br />
-            <em className="font-normal italic text-terracotta">le meilleur suivi</em>
-          </h1>
-          <Link
-            href="/"
-            className="mt-2 inline-block font-mono text-[10px] uppercase tracking-[0.15em] text-stone underline underline-offset-2"
-          >
-            &larr; Faire mon diagnostic
-          </Link>
-        </div>
-        <PaywallCard />
-      </main>
-    )
+    return <AnonymousPaywall />
   }
 
-  // Has analysis — show diagnostic preview + paywall pricing
+  // Logged-in user with analysis — show diagnostic preview + pricing
   const name = displayNameFromEmail(user.email ?? profile.email)
   const formattedDate = formatDiagnosticDate(analysis.created_at)
 
