@@ -1,12 +1,8 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useState } from 'react'
-import { toast } from 'sonner'
-import { AnalyzingOverlay } from '@/components/landing/analyzing-overlay'
 import { ExampleResultModal } from '@/components/landing/example-result-modal'
-import { UploadZone } from '@/components/landing/upload-zone'
-import { ANONYMOUS_ANALYSIS_KEY } from '@/components/dashboard/anonymous-paywall'
 
 const STEPS = [
   {
@@ -75,41 +71,9 @@ const FAQ = [
   },
 ]
 
-type FlowState = 'idle' | 'analyzing'
-
 export default function Home() {
-  const router = useRouter()
-  const [flowState, setFlowState] = useState<FlowState>('idle')
-  const [image, setImage] = useState<string | null>(null)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [showExample, setShowExample] = useState(false)
-
-  async function handleFileSelected(dataUrl: string) {
-    setImage(dataUrl)
-    setFlowState('analyzing')
-
-    try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: dataUrl }),
-      })
-
-      const body = await res.json().catch(() => null)
-
-      if (!res.ok) {
-        toast.error(body?.error ?? 'Une erreur est survenue, réessaie.')
-        setFlowState('idle')
-        return
-      }
-
-      sessionStorage.setItem(ANONYMOUS_ANALYSIS_KEY, JSON.stringify(body.analysis))
-      router.push('/paywall')
-    } catch {
-      toast.error('Une erreur est survenue, réessaie.')
-      setFlowState('idle')
-    }
-  }
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16 sm:py-24">
@@ -127,7 +91,7 @@ export default function Home() {
         </p>
 
         <div className="mt-10">
-          <UploadZone onFileSelected={handleFileSelected} />
+          <StartCta />
         </div>
       </section>
 
@@ -266,7 +230,7 @@ export default function Home() {
           Prête à découvrir ta peau ?
         </h2>
         <div className="mt-8">
-          <UploadZone onFileSelected={handleFileSelected} />
+          <StartCta />
         </div>
         <button
           onClick={() => setShowExample(true)}
@@ -287,12 +251,20 @@ export default function Home() {
         </p>
       </footer>
 
-      {flowState === 'analyzing' && image && (
-        <AnalyzingOverlay imageSrc={image} />
-      )}
       {showExample && (
         <ExampleResultModal onClose={() => setShowExample(false)} />
       )}
     </main>
+  )
+}
+
+function StartCta() {
+  return (
+    <Link
+      href="/onboarding/name"
+      className="inline-flex w-full max-w-sm items-center justify-center rounded-full bg-charcoal px-8 py-4 font-sans text-[15px] font-bold text-cream shadow-[0_8px_20px_-6px_rgba(31,27,22,0.3)] transition-opacity hover:opacity-80"
+    >
+      Commencer mon diagnostic &rarr;
+    </Link>
   )
 }
