@@ -150,15 +150,22 @@ async function handleTrialWillEnd(sub: Stripe.Subscription) {
   return userId
 }
 
+function getSubscriptionIdFromInvoice(invoice: Stripe.Invoice): string | null {
+  // In Stripe SDK v22+, invoice.subscription was removed.
+  // The subscription reference now lives at invoice.parent.subscription_details.subscription.
+  const details = invoice.parent?.type === 'subscription_details'
+    ? invoice.parent.subscription_details
+    : null
+  if (!details) return null
+  const sub = details.subscription
+  return typeof sub === 'string' ? sub : (sub?.id ?? null)
+}
+
 async function handleInvoiceSucceeded(invoice: Stripe.Invoice) {
   // Only update on renewals, not on the first charge after trial
   if (invoice.billing_reason !== 'subscription_cycle') return null
 
-  const subscriptionId =
-    typeof invoice.subscription === 'string'
-      ? invoice.subscription
-      : invoice.subscription?.id
-
+  const subscriptionId = getSubscriptionIdFromInvoice(invoice)
   if (!subscriptionId) return null
 
   const periodEnd = invoice.lines?.data[0]?.period?.end
@@ -175,17 +182,16 @@ async function handleInvoiceSucceeded(invoice: Stripe.Invoice) {
 
 async function handleInvoiceFailed(invoice: Stripe.Invoice) {
   const customerId =
-    typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+    typeof invoice.customer === 'string'
+      ? invoice.customer
+      : (invoice.customer as Stripe.Customer | null)?.id ?? null
 
   if (!customerId) return null
 
   const userId = await getUserIdFromCustomerId(customerId)
   const email = await getCustomerEmail(customerId)
 
-  const subscriptionId =
-    typeof invoice.subscription === 'string'
-      ? invoice.subscription
-      : invoice.subscription?.id
+  const subscriptionId = getSubscriptionIdFromInvoice(invoice)
 
   if (subscriptionId) {
     await supabaseAdmin
