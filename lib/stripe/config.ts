@@ -13,7 +13,7 @@ export const PRICING_PLANS: Record<
   }
 > = {
   monthly: {
-    priceId: process.env.STRIPE_PRICE_MONTHLY,
+    priceId: process.env.STRIPE_PRICE_ID_MONTHLY,
     mode: 'subscription',
     trialDays: 7,
     label: 'Mensuel',
@@ -22,7 +22,7 @@ export const PRICING_PLANS: Record<
     interval: 'month',
   },
   yearly: {
-    priceId: process.env.STRIPE_PRICE_YEARLY,
+    priceId: process.env.STRIPE_PRICE_ID_ANNUAL,
     mode: 'subscription',
     trialDays: 7,
     label: 'Annuel',
@@ -31,7 +31,7 @@ export const PRICING_PLANS: Record<
     interval: 'year',
   },
   lifetime: {
-    priceId: process.env.STRIPE_PRICE_LIFETIME,
+    priceId: process.env.STRIPE_PRICE_ID_LIFETIME,
     mode: 'payment',
     trialDays: 0,
     label: 'Lifetime',

@@ -67,6 +67,7 @@ export async function POST(request: Request) {
 
     const planConfig = PRICING_PLANS[plan]
     if (!planConfig?.priceId) {
+      console.error(`[checkout] missing price ID for plan "${plan}" — check STRIPE_PRICE_ID_* env vars`)
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
     }
 
