@@ -1,6 +1,6 @@
-import Link from ‘next/link’
-import { PaywallCard } from ‘@/components/paywall/PaywallCard’
-import { createClient } from ‘@/lib/supabase/server’
+import Link from 'next/link'
+import { PaywallCard } from '@/components/paywall/PaywallCard'
+import { createClient } from '@/lib/supabase/server'
 
 export default async function PaywallPage() {
   const supabase = createClient()
@@ -17,7 +17,6 @@ export default async function PaywallPage() {
 
   return (
     <main className="min-h-screen bg-[#F4ECDD]">
-      {/* Eyebrow */}
       <div className="pt-10 text-center">
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-stone">
           Mira Premium
@@ -31,7 +30,7 @@ export default async function PaywallPage() {
           href="/"
           className="mt-2 inline-block font-mono text-[10px] uppercase tracking-[0.15em] text-stone underline underline-offset-2"
         >
-          ← Retour au diagnostic
+          &larr; Retour au diagnostic
         </Link>
       </div>
       <PaywallCard />
