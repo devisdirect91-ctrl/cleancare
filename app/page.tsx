@@ -104,7 +104,7 @@ export default function Home() {
       }
 
       sessionStorage.setItem(ANONYMOUS_ANALYSIS_KEY, JSON.stringify(body.analysis))
-      router.push('/dashboard')
+      router.push('/paywall')
     } catch {
       toast.error('Une erreur est survenue, réessaie.')
       setFlowState('idle')

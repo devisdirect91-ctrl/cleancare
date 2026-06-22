@@ -5,15 +5,15 @@ import { FollowupActions } from '@/components/dashboard/followup-actions'
 import { PaywallScreen } from '@/components/dashboard/paywall-screen'
 import { RoutineSection } from '@/components/dashboard/routine-section'
 import { StickyTrialBar } from '@/components/dashboard/sticky-trial-bar'
+import {
+  buildPaywallProps,
+  displayNameFromEmail,
+  formatDiagnosticDate,
+  getLatestDiagnostic,
+} from '@/lib/diagnostic'
 import { createClient } from '@/lib/supabase/server'
-import type { AnalysisRow, Profile } from '@/types/analysis'
 
 const DAY_MS = 24 * 60 * 60 * 1000
-
-function displayNameFromEmail(email: string) {
-  const local = email.split('@')[0]
-  return local.charAt(0).toUpperCase() + local.slice(1)
-}
 
 export default async function DashboardPage() {
   const supabase = createClient()
@@ -24,19 +24,7 @@ export default async function DashboardPage() {
     return <AnonymousPaywall />
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single<Profile>()
-
-  const { data: analysis } = await supabase
-    .from('analyses')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single<AnalysisRow>()
+  const { profile, analysis } = await getLatestDiagnostic(supabase, user.id)
 
   if (!analysis || !profile) {
     return (
@@ -67,31 +55,13 @@ export default async function DashboardPage() {
 
   const fullResult = analysis.full_result ?? {}
   const name = displayNameFromEmail(user.email ?? profile.email)
-  const formattedDate = new Intl.DateTimeFormat('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(analysis.created_at))
+  const formattedDate = formatDiagnosticDate(analysis.created_at)
 
   const concerns = analysis.concerns ?? []
   const products = analysis.recommended_products ?? []
 
   if (locked) {
-    return (
-      <PaywallScreen
-        name={name}
-        date={formattedDate}
-        skinType={analysis.skin_type ?? '—'}
-        undertone={analysis.undertone ?? '—'}
-        hydrationLevel={fullResult.hydration_level ?? null}
-        textureScore={fullResult.texture_score ?? null}
-        concerns={concerns.map((concern) => getConcernInfo(concern).label)}
-        observation={fullResult.recommendations_summary ?? null}
-        productsCount={products.length}
-        morningStepsCount={analysis.routine_morning?.length ?? 0}
-        eveningStepsCount={analysis.routine_evening?.length ?? 0}
-      />
-    )
+    return <PaywallScreen {...buildPaywallProps(name, formattedDate, analysis)} />
   }
 
   return (
