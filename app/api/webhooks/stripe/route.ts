@@ -69,7 +69,7 @@ async function logEvent(
       type: event.type,
       created: event.created,
       livemode: event.livemode,
-      data: { object: (event.data.object as Record<string, unknown>) },
+      data: { object: (event.data.object as unknown as Record<string, unknown>) },
     },
   })
 }
