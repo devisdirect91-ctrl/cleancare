@@ -166,7 +166,7 @@ export default function Home() {
       {/* SECTION 4 — Ce qu'on analyse */}
       <section className="mt-20">
         <h2 className="text-center font-display text-2xl text-charcoal">
-          Ce qu'on analyse
+          Ce qu&apos;on analyse
         </h2>
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {CRITERIA.map((c) => (

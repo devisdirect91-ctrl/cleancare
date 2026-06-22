@@ -54,7 +54,7 @@ export default async function BillingPage() {
         {profile.trial_ends_at && status === 'trialing' && (
           <div className="mt-4 flex items-center justify-between border-t border-charcoal/8 pt-4">
             <p className="font-mono text-xs uppercase tracking-wide text-stone">
-              Essai gratuit jusqu'au
+              Essai gratuit jusqu&apos;au
             </p>
             <p className="text-sm text-charcoal">
               {new Intl.DateTimeFormat('fr-FR', {
