@@ -18,7 +18,7 @@ interface PaywallScreenProps {
   anonymous?: boolean
 }
 
-type Plan = 'annual' | 'monthly'
+type Plan = 'yearly' | 'monthly'
 
 export function PaywallScreen({
   name,
@@ -34,7 +34,7 @@ export function PaywallScreen({
   eveningStepsCount,
   anonymous = false,
 }: PaywallScreenProps) {
-  const [plan, setPlan] = useState<Plan>('annual')
+  const [plan, setPlan] = useState<Plan>('yearly')
   const [loading, setLoading] = useState<Plan | 'lifetime' | null>(null)
 
   async function startCheckout(selected: Plan | 'lifetime') {
@@ -44,7 +44,7 @@ export function PaywallScreen({
     }
     setLoading(selected)
     try {
-      const res = await fetch('/api/stripe/checkout', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: selected }),
@@ -200,8 +200,8 @@ export function PaywallScreen({
 
             <div className="mb-4 flex flex-col gap-2">
               <PriceOption
-                selected={plan === 'annual'}
-                onSelect={() => setPlan('annual')}
+                selected={plan === 'yearly'}
+                onSelect={() => setPlan('yearly')}
                 badge="Recommandé"
                 label="Annuel"
                 sub="Soit 4,08 €/mois"

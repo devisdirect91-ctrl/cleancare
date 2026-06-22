@@ -1,13 +1,6 @@
-import Link from 'next/link'
-import { AnonymousPaywall } from '@/components/dashboard/anonymous-paywall'
-import { PaywallScreen } from '@/components/dashboard/paywall-screen'
-import {
-  buildPaywallProps,
-  displayNameFromEmail,
-  formatDiagnosticDate,
-  getLatestDiagnostic,
-} from '@/lib/diagnostic'
-import { createClient } from '@/lib/supabase/server'
+import Link from ‘next/link’
+import { PaywallCard } from ‘@/components/paywall/PaywallCard’
+import { createClient } from ‘@/lib/supabase/server’
 
 export default async function PaywallPage() {
   const supabase = createClient()
@@ -15,32 +8,33 @@ export default async function PaywallPage() {
   const user = userData.user
 
   if (!user) {
-    return <AnonymousPaywall />
-  }
-
-  const { profile, analysis } = await getLatestDiagnostic(supabase, user.id)
-
-  if (!analysis || !profile) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
-        <p className="font-mono text-xs uppercase tracking-wide text-terracotta">
-          Aucun diagnostic
-        </p>
-        <h1 className="mt-3 font-display text-2xl text-charcoal">
-          Tu n’as pas encore d’analyse.
-        </h1>
-        <Link
-          href="/"
-          className="mt-6 rounded-xl bg-terracotta px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
-        >
-          Faire mon premier diagnostic
-        </Link>
+      <main className="min-h-screen bg-[#F4ECDD]">
+        <PaywallCard />
       </main>
     )
   }
 
-  const name = displayNameFromEmail(user.email ?? profile.email)
-  const formattedDate = formatDiagnosticDate(analysis.created_at)
-
-  return <PaywallScreen {...buildPaywallProps(name, formattedDate, analysis)} />
+  return (
+    <main className="min-h-screen bg-[#F4ECDD]">
+      {/* Eyebrow */}
+      <div className="pt-10 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-stone">
+          Mira Premium
+        </p>
+        <h1 className="mt-3 font-display text-[28px] leading-[1.1] tracking-tight text-charcoal">
+          Ta peau mérite
+          <br />
+          <em className="font-normal italic text-terracotta">le meilleur suivi</em>
+        </h1>
+        <Link
+          href="/"
+          className="mt-2 inline-block font-mono text-[10px] uppercase tracking-[0.15em] text-stone underline underline-offset-2"
+        >
+          ← Retour au diagnostic
+        </Link>
+      </div>
+      <PaywallCard />
+    </main>
+  )
 }
