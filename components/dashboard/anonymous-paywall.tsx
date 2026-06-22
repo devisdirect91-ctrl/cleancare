@@ -52,6 +52,9 @@ export function AnonymousPaywall() {
   }
 
   const fullResult = analysis.full_result ?? {}
+  const hydrationLevel = typeof fullResult.hydration_level === 'number' ? fullResult.hydration_level : null
+  const textureScore = typeof fullResult.texture_score === 'number' ? fullResult.texture_score : null
+  const observation = typeof fullResult.recommendations_summary === 'string' ? fullResult.recommendations_summary : null
   const formattedDate = new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -65,10 +68,10 @@ export function AnonymousPaywall() {
       date={formattedDate}
       skinType={analysis.skin_type ?? '—'}
       undertone={analysis.undertone ?? '—'}
-      hydrationLevel={fullResult.hydration_level ?? null}
-      textureScore={fullResult.texture_score ?? null}
+      hydrationLevel={hydrationLevel}
+      textureScore={textureScore}
       concerns={(analysis.concerns ?? []).map((concern) => getConcernInfo(concern).label)}
-      observation={fullResult.recommendations_summary ?? null}
+      observation={observation}
       productsCount={(analysis.recommended_products ?? []).length}
       morningStepsCount={analysis.routine_morning?.length ?? 0}
       eveningStepsCount={analysis.routine_evening?.length ?? 0}
