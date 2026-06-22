@@ -265,9 +265,36 @@ export async function POST(req: Request) {
         break
       }
 
-      case 'customer.subscription.updated':
-        userId = await handleSubscriptionUpsert(obj as Stripe.Subscription)
+      case 'customer.subscription.updated': {
+        const sub = obj as Stripe.Subscription
+        const prev = (event.data.previous_attributes ?? {}) as Record<string, unknown>
+        userId = await handleSubscriptionUpsert(sub)
+
+        if (userId) {
+          // Cancellation scheduled: cancel_at_period_end just turned true
+          if (sub.cancel_at_period_end && prev.cancel_at_period_end === false) {
+            const daysUsed = Math.floor(
+              (Date.now() / 1000 - sub.created) / 86400
+            )
+            await trackServerEvent(userId, 'subscription_cancellation_scheduled', {
+              plan: sub.items.data[0]?.price?.id,
+              days_used: daysUsed,
+              cancel_at: sub.cancel_at
+                ? new Date(sub.cancel_at * 1000).toISOString()
+                : null,
+            })
+          }
+
+          // Reactivation: cancel_at_period_end just turned false (user un-canceled)
+          if (!sub.cancel_at_period_end && prev.cancel_at_period_end === true) {
+            await trackServerEvent(userId, 'subscription_reactivated', {
+              plan: sub.items.data[0]?.price?.id,
+              status: sub.status,
+            })
+          }
+        }
         break
+      }
 
       case 'customer.subscription.deleted': {
         const sub = obj as Stripe.Subscription

@@ -14,6 +14,7 @@ export default function UploadStep() {
   const [firstName, setFirstName] = useState<string | null>(null)
   const [flowState, setFlowState] = useState<FlowState>('idle')
   const [image, setImage] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
   const router = useRouter()
 
   useEffect(() => {
@@ -51,7 +52,9 @@ export default function UploadStep() {
 
       if (!res.ok) {
         const reason = body?.error ?? 'Une erreur est survenue, réessaie.'
+        setRetryCount((c) => c + 1)
         trackEvent('photo_upload_failed', { reason })
+        trackEvent('analysis_failed', { reason, retry_count: retryCount })
         toast.error(reason)
         setFlowState('idle')
         return
@@ -63,7 +66,9 @@ export default function UploadStep() {
       router.push('/paywall')
     } catch (err) {
       const reason = err instanceof Error ? err.message : 'Erreur réseau'
+      setRetryCount((c) => c + 1)
       trackEvent('photo_upload_failed', { reason })
+      trackEvent('analysis_failed', { reason, retry_count: retryCount })
       toast.error('Une erreur est survenue, réessaie.')
       setFlowState('idle')
     }

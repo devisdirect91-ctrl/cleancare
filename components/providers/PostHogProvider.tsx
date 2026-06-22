@@ -29,6 +29,15 @@ function PostHogInner({ children }: { children: React.ReactNode }) {
 
         if (!profile) return
 
+        // Track when a canceled user comes back
+        if (profile.subscription_status === 'canceled') {
+          const sessionKey = 'ph:canceled_returned_tracked'
+          if (!sessionStorage.getItem(sessionKey)) {
+            sessionStorage.setItem(sessionKey, '1')
+            trackEvent('canceled_user_returned')
+          }
+        }
+
         identifyUser(session.user.id, {
           email: session.user.email,
           first_name: profile.first_name,
