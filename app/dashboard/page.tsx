@@ -54,6 +54,11 @@ export default async function DashboardPage() {
   const locked = !unlocked
 
   const fullResult = analysis.full_result ?? {}
+  const summary = typeof fullResult.recommendations_summary === 'string' ? fullResult.recommendations_summary : null
+  const hydrationLevel = typeof fullResult.hydration_level === 'number' ? fullResult.hydration_level : null
+  const textureScore = typeof fullResult.texture_score === 'number' ? fullResult.texture_score : null
+  const ingredientsToSeek = Array.isArray(fullResult.ingredients_to_seek) ? (fullResult.ingredients_to_seek as string[]) : []
+  const ingredientsToAvoid = Array.isArray(fullResult.ingredients_to_avoid) ? (fullResult.ingredients_to_avoid as string[]) : []
   const name = displayNameFromEmail(user.email ?? profile.email)
   const formattedDate = formatDiagnosticDate(analysis.created_at)
 
@@ -81,9 +86,9 @@ export default async function DashboardPage() {
         <p className="font-display text-xl italic text-charcoal">
           Ce que ta peau dit aujourd’hui
         </p>
-        {fullResult.recommendations_summary && (
+        {summary && (
           <p className="mt-4 font-display text-[18px] leading-relaxed text-charcoal">
-            {fullResult.recommendations_summary}
+            {summary}
           </p>
         )}
 
@@ -92,19 +97,11 @@ export default async function DashboardPage() {
           <Stat label="Sous-ton" value={analysis.undertone ?? '—'} />
           <Stat
             label="Hydratation"
-            value={
-              fullResult.hydration_level != null
-                ? `${fullResult.hydration_level} / 10`
-                : '—'
-            }
+            value={hydrationLevel != null ? `${hydrationLevel} / 10` : '—'}
           />
           <Stat
             label="Texture"
-            value={
-              fullResult.texture_score != null
-                ? `${fullResult.texture_score} / 10`
-                : '—'
-            }
+            value={textureScore != null ? `${textureScore} / 10` : '—'}
           />
         </div>
       </section>
@@ -154,14 +151,14 @@ export default async function DashboardPage() {
       </div>
 
       {/* Section 5 — Ingrédients */}
-      {(fullResult.ingredients_to_seek?.length || fullResult.ingredients_to_avoid?.length) ? (
+      {(ingredientsToSeek.length > 0 || ingredientsToAvoid.length > 0) ? (
         <section className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="rounded-2xl bg-[#EEF3EA] p-6">
             <p className="font-mono text-xs uppercase tracking-wide text-[#5B7A52]">
               À privilégier
             </p>
             <ul className="mt-4 space-y-2">
-              {fullResult.ingredients_to_seek?.map((ingredient) => (
+              {ingredientsToSeek.map((ingredient) => (
                 <li key={ingredient} className="flex items-start gap-2 text-sm text-charcoal">
                   <span className="mt-2 h-1 w-1 flex-none rounded-full bg-[#5B7A52]" />
                   {ingredient}
@@ -174,7 +171,7 @@ export default async function DashboardPage() {
               À limiter
             </p>
             <ul className="mt-4 space-y-2">
-              {fullResult.ingredients_to_avoid?.map((ingredient) => (
+              {ingredientsToAvoid.map((ingredient) => (
                 <li key={ingredient} className="flex items-start gap-2 text-sm text-charcoal">
                   <span className="mt-2 h-1 w-1 flex-none rounded-full bg-terracotta" />
                   {ingredient}
