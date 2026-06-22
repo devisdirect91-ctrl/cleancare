@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getConcernInfo } from '@/components/dashboard/concern-icon'
 import { FollowupActions } from '@/components/dashboard/followup-actions'
-import { LockedSection } from '@/components/dashboard/locked-section'
+import { PaywallScreen } from '@/components/dashboard/paywall-screen'
 import { RoutineSection } from '@/components/dashboard/routine-section'
 import { StickyTrialBar } from '@/components/dashboard/sticky-trial-bar'
 import { createClient } from '@/lib/supabase/server'
@@ -70,6 +70,24 @@ export default async function DashboardPage() {
 
   const concerns = analysis.concerns ?? []
   const products = analysis.recommended_products ?? []
+
+  if (locked) {
+    return (
+      <PaywallScreen
+        name={name}
+        date={formattedDate}
+        skinType={analysis.skin_type ?? '—'}
+        undertone={analysis.undertone ?? '—'}
+        hydrationLevel={fullResult.hydration_level ?? null}
+        textureScore={fullResult.texture_score ?? null}
+        concerns={concerns.map((concern) => getConcernInfo(concern).label)}
+        observation={fullResult.recommendations_summary ?? null}
+        productsCount={products.length}
+        morningStepsCount={analysis.routine_morning?.length ?? 0}
+        eveningStepsCount={analysis.routine_evening?.length ?? 0}
+      />
+    )
+  }
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16 pb-28 sm:py-20">
@@ -148,20 +166,16 @@ export default async function DashboardPage() {
 
       {/* Section 3 & 4 — Routines */}
       <div className="mt-12 space-y-12">
-        <LockedSection locked={locked}>
-          <RoutineSection
-            title="Ta routine matin"
-            steps={analysis.routine_morning ?? []}
-            products={products}
-          />
-        </LockedSection>
-        <LockedSection locked={locked}>
-          <RoutineSection
-            title="Ta routine soir"
-            steps={analysis.routine_evening ?? []}
-            products={products}
-          />
-        </LockedSection>
+        <RoutineSection
+          title="Ta routine matin"
+          steps={analysis.routine_morning ?? []}
+          products={products}
+        />
+        <RoutineSection
+          title="Ta routine soir"
+          steps={analysis.routine_evening ?? []}
+          products={products}
+        />
       </div>
 
       {/* Section 5 — Ingrédients */}
