@@ -25,7 +25,7 @@ const STEPS = [
 
 const CRITERIA = [
   'Type de peau',
-  'Niveau d'hydratation',
+  "Niveau d'hydratation",
   'Pores et texture',
   'Imperfections',
   'Sous-ton (chaud / froid / neutre)',

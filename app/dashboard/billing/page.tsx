@@ -39,7 +39,7 @@ export default async function BillingPage() {
         {profile.current_period_end && status === 'active' && (
           <div className="mt-4 flex items-center justify-between border-t border-charcoal/8 pt-4">
             <p className="font-mono text-xs uppercase tracking-wide text-stone">
-              {profile.cancel_at_period_end ? 'Accès jusqu'au' : 'Prochain renouvellement'}
+              {profile.cancel_at_period_end ? "Accès jusqu'au" : 'Prochain renouvellement'}
             </p>
             <p className="text-sm text-charcoal">
               {new Intl.DateTimeFormat('fr-FR', {
