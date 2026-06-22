@@ -119,7 +119,7 @@ export function CancellationSurvey({ daysSinceStart, onClose }: Props) {
             disabled={!selectedReason || loading}
             className="w-full rounded-full border border-charcoal/20 py-3 text-sm font-medium text-stone transition-colors hover:border-terracotta hover:text-terracotta disabled:opacity-40"
           >
-            {loading ? 'Redirection…' : 'Confirmer l'annulation'}
+            {loading ? 'Redirection…' : "Confirmer l'annulation"}
           </button>
           <button
             onClick={handleKeep}
