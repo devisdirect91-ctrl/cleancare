@@ -101,7 +101,10 @@ async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
     return null
   }
 
-  const priceId = sub.items.data[0]?.price?.id ?? null
+  const firstItem = sub.items.data[0]
+  const priceId = firstItem?.price?.id ?? null
+  // In Stripe SDK v22+, current_period_end lives on the subscription item, not on Subscription itself.
+  const periodEnd = firstItem?.current_period_end ?? null
 
   await supabaseAdmin
     .from('profiles')
@@ -112,7 +115,7 @@ async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
       trial_ends_at: sub.trial_end
         ? new Date(sub.trial_end * 1000).toISOString()
         : null,
-      current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+      current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
       cancel_at_period_end: sub.cancel_at_period_end,
     })
     .eq('id', userId)
