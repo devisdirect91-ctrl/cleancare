@@ -49,7 +49,7 @@ export default async function DashboardPage() {
     (new Date(profile.trial_ends_at).getTime() - Date.now()) / DAY_MS
   )
   const isPremium = profile.subscription_status === 'active'
-  const isTrialActive = profile.subscription_status === 'trial' && daysLeft > 0
+  const isTrialActive = profile.subscription_status === 'trialing' && daysLeft > 0
   const unlocked = isPremium || isTrialActive
   const locked = !unlocked
 
