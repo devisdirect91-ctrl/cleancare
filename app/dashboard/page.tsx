@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { CheckoutSuccessTracker } from '@/components/analytics/CheckoutSuccessTracker'
 import { AnonymousPaywall } from '@/components/dashboard/anonymous-paywall'
 import { getConcernInfo } from '@/components/dashboard/concern-icon'
 import { FollowupActions } from '@/components/dashboard/followup-actions'
@@ -71,6 +72,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16 pb-28 sm:py-20">
+      <CheckoutSuccessTracker />
       {/* Header */}
       <header>
         <p className="font-mono text-xs uppercase tracking-widest text-terracotta">

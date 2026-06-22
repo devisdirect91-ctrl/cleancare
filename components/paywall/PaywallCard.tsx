@@ -1,8 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { trackEvent } from '@/lib/analytics/posthog'
 
 type Plan = 'monthly' | 'yearly'
+
+const PLAN_PRICES: Record<'monthly' | 'yearly' | 'lifetime', number> = {
+  monthly: 7.99,
+  yearly: 49,
+  lifetime: 99,
+}
 
 const BENEFITS = [
   <>Routine <strong>matin et soir</strong> personnalisée étape par étape</>,
@@ -17,7 +24,25 @@ export function PaywallCard() {
   const [loading, setLoading] = useState<'monthly' | 'yearly' | 'lifetime' | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    trackEvent('paywall_card_viewed', { has_lifetime_available: true })
+  }, [])
+
+  function handlePlanChange(newPlan: Plan) {
+    setSelectedPlan(newPlan)
+    trackEvent('plan_selected', {
+      plan: newPlan,
+      price: PLAN_PRICES[newPlan],
+    })
+  }
+
   async function handleCheckout(plan: 'monthly' | 'yearly' | 'lifetime') {
+    trackEvent('checkout_initiated', {
+      plan,
+      has_trial: plan !== 'lifetime',
+      price: PLAN_PRICES[plan],
+    })
+
     setLoading(plan)
     setError(null)
 
@@ -31,7 +56,7 @@ export function PaywallCard() {
       const data = await response.json()
 
       if (response.status === 401) {
-        window.location.href = `/auth/signup?redirectTo=/paywall?plan=${plan}`
+        window.location.href = `/auth/signup?redirectTo=${encodeURIComponent(`/paywall?plan=${plan}`)}`
         return
       }
 
@@ -39,10 +64,15 @@ export function PaywallCard() {
         throw new Error(data.error || 'Erreur lors de la création du paiement')
       }
 
+      // Persist plan so the success page can track it
+      localStorage.setItem('cleancare:checkout_plan', plan)
+      localStorage.setItem('cleancare:checkout_price', String(PLAN_PRICES[plan]))
+
       window.location.href = data.url
     } catch (err: unknown) {
-      console.error('Checkout error:', err)
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue')
+      const reason = err instanceof Error ? err.message : 'Une erreur est survenue'
+      trackEvent('checkout_failed', { plan, reason })
+      setError(reason)
       setLoading(null)
     }
   }
@@ -94,7 +124,7 @@ export function PaywallCard() {
           <PriceOption
             id="yearly"
             selected={selectedPlan === 'yearly'}
-            onSelect={() => setSelectedPlan('yearly')}
+            onSelect={() => handlePlanChange('yearly')}
             badge="Recommandé"
             label="Annuel"
             sub="Soit 4,08 €/mois"
@@ -106,7 +136,7 @@ export function PaywallCard() {
           <PriceOption
             id="monthly"
             selected={selectedPlan === 'monthly'}
-            onSelect={() => setSelectedPlan('monthly')}
+            onSelect={() => handlePlanChange('monthly')}
             label="Mensuel"
             sub="Sans engagement"
             amount="7,99 €"
@@ -135,7 +165,10 @@ export function PaywallCard() {
         </p>
 
         <button
-          onClick={() => window.history.back()}
+          onClick={() => {
+            trackEvent('checkout_dismissed', { plan_was_selected: selectedPlan })
+            window.history.back()
+          }}
           disabled={isLoading}
           className="text-xs text-stone underline underline-offset-2 disabled:opacity-50"
         >

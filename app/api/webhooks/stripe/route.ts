@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { sendTrialEndingEmail, sendPaymentFailedEmail } from '@/lib/email'
+import { trackServerEvent } from '@/lib/analytics/posthog-server'
 
 // ── Health check ────────────────────────────────────────────────────────────
 
@@ -125,6 +126,8 @@ async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
 }
 
 async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
+  const userId = await getUserIdFromSubscription(sub)
+
   const { error } = await supabaseAdmin
     .from('profiles')
     .update({ subscription_status: 'canceled' })
@@ -132,7 +135,7 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
 
   if (error) throw error
   console.log(`[webhook] subscription canceled: ${sub.id}`)
-  return null
+  return userId
 }
 
 async function handleTrialWillEnd(sub: Stripe.Subscription) {
@@ -249,26 +252,63 @@ export async function POST(req: Request) {
         userId = await handleCheckoutCompleted(obj as Stripe.Checkout.Session)
         break
 
-      case 'customer.subscription.created':
+      case 'customer.subscription.created': {
+        const sub = obj as Stripe.Subscription
+        userId = await handleSubscriptionUpsert(sub)
+        if (userId) {
+          await trackServerEvent(userId, 'subscription_created_server', {
+            plan: sub.items.data[0]?.price?.id,
+            status: sub.status,
+            trial_end: sub.trial_end,
+          })
+        }
+        break
+      }
+
       case 'customer.subscription.updated':
         userId = await handleSubscriptionUpsert(obj as Stripe.Subscription)
         break
 
-      case 'customer.subscription.deleted':
-        userId = await handleSubscriptionDeleted(obj as Stripe.Subscription)
+      case 'customer.subscription.deleted': {
+        const sub = obj as Stripe.Subscription
+        userId = await handleSubscriptionDeleted(sub)
+        if (userId) {
+          await trackServerEvent(userId, 'subscription_canceled', {
+            reason: (sub as unknown as Record<string, unknown>)?.cancellation_details
+              ? ((sub as unknown as Record<string, unknown>).cancellation_details as Record<string, unknown>)?.reason
+              : null,
+          })
+        }
         break
+      }
 
       case 'customer.subscription.trial_will_end':
         userId = await handleTrialWillEnd(obj as Stripe.Subscription)
         break
 
-      case 'invoice.payment_succeeded':
-        userId = await handleInvoiceSucceeded(obj as Stripe.Invoice)
+      case 'invoice.payment_succeeded': {
+        const invoice = obj as Stripe.Invoice
+        userId = await handleInvoiceSucceeded(invoice)
+        if (userId && invoice.billing_reason === 'subscription_cycle') {
+          await trackServerEvent(userId, 'trial_converted', {
+            plan: invoice.lines?.data[0]?.price?.id,
+            value: (invoice.amount_paid ?? 0) / 100,
+          })
+        }
         break
+      }
 
-      case 'invoice.payment_failed':
-        userId = await handleInvoiceFailed(obj as Stripe.Invoice)
+      case 'invoice.payment_failed': {
+        const invoice = obj as Stripe.Invoice
+        userId = await handleInvoiceFailed(invoice)
+        if (userId) {
+          await trackServerEvent(userId, 'payment_failed_server', {
+            amount: (invoice.amount_due ?? 0) / 100,
+            attempt: invoice.attempt_count,
+          })
+        }
         break
+      }
 
       default:
         console.log(`[webhook] unhandled event type: ${event.type}`)

@@ -4,6 +4,12 @@ import { Check, Lock } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { trackEvent } from '@/lib/analytics/posthog'
 
+const PLAN_PRICES: Record<'monthly' | 'yearly' | 'lifetime', number> = {
+  monthly: 7.99,
+  yearly: 49,
+  lifetime: 99,
+}
+
 interface PaywallScreenProps {
   name: string
   date: string
@@ -59,9 +65,18 @@ export function PaywallScreen({
 
   async function startCheckout(selected: Plan | 'lifetime') {
     if (anonymous) {
+      localStorage.setItem('cleancare:checkout_plan', selected)
+      localStorage.setItem('cleancare:checkout_price', String(PLAN_PRICES[selected]))
       window.location.href = `/auth/signup?redirectTo=${encodeURIComponent(`/paywall?plan=${selected}`)}`
       return
     }
+
+    trackEvent('checkout_initiated', {
+      plan: selected,
+      has_trial: selected !== 'lifetime',
+      price: PLAN_PRICES[selected],
+    })
+
     setLoading(selected)
     try {
       const res = await fetch('/api/checkout', {
@@ -71,8 +86,13 @@ export function PaywallScreen({
       })
       const body = await res.json()
       if (body.url) {
+        localStorage.setItem('cleancare:checkout_plan', selected)
+        localStorage.setItem('cleancare:checkout_price', String(PLAN_PRICES[selected]))
         window.location.href = body.url
       }
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : 'Erreur réseau'
+      trackEvent('checkout_failed', { plan: selected, reason })
     } finally {
       setLoading(null)
     }

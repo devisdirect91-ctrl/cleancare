@@ -1,5 +1,6 @@
 import { AnonymousPaywall } from '@/components/dashboard/anonymous-paywall'
 import { AutoCheckout } from '@/components/paywall/AutoCheckout'
+import { CheckoutCanceledTracker } from '@/components/analytics/CheckoutCanceledTracker'
 import { PaywallScreen } from '@/components/dashboard/paywall-screen'
 import {
   buildPaywallProps,
@@ -29,7 +30,12 @@ export default async function PaywallPage({
 
   // Anonymous user — read analysis from sessionStorage and show PaywallScreen
   if (!user) {
-    return <AnonymousPaywall />
+    return (
+      <>
+        <CheckoutCanceledTracker />
+        <AnonymousPaywall />
+      </>
+    )
   }
 
   const { profile, analysis } = await getLatestDiagnostic(supabase, user.id)
@@ -43,5 +49,10 @@ export default async function PaywallPage({
   const name = displayNameFromEmail(user.email ?? profile.email)
   const formattedDate = formatDiagnosticDate(analysis.created_at)
 
-  return <PaywallScreen {...buildPaywallProps(name, formattedDate, analysis)} />
+  return (
+    <>
+      <CheckoutCanceledTracker />
+      <PaywallScreen {...buildPaywallProps(name, formattedDate, analysis)} />
+    </>
+  )
 }
