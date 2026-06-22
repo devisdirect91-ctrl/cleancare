@@ -20,10 +20,7 @@ export async function POST(request: Request) {
 async function handleAnalyze(request: Request) {
   const supabase = createClient()
 
-  const { data: userData, error: authError } = await supabase.auth.getUser()
-  if (authError || !userData.user) {
-    return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-  }
+  const { data: userData } = await supabase.auth.getUser()
   const user = userData.user
 
   const { image } = await request.json()
@@ -31,45 +28,29 @@ async function handleAnalyze(request: Request) {
     return NextResponse.json({ error: 'Photo manquante' }, { status: 400 })
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('subscription_status')
-    .eq('id', user.id)
-    .single()
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_status')
+      .eq('id', user.id)
+      .single()
 
-  if (profile?.subscription_status === 'trial') {
-    const { count } = await supabase
-      .from('analyses')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+    if (profile?.subscription_status === 'trial') {
+      const { count } = await supabase
+        .from('analyses')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
 
-    if ((count ?? 0) >= TRIAL_ANALYSIS_LIMIT) {
-      return NextResponse.json(
-        {
-          error:
-            "Tu as utilisé tes analyses d'essai, passe en Premium pour continuer",
-        },
-        { status: 403 }
-      )
+      if ((count ?? 0) >= TRIAL_ANALYSIS_LIMIT) {
+        return NextResponse.json(
+          {
+            error:
+              "Tu as utilisé tes analyses d'essai, passe en Premium pour continuer",
+          },
+          { status: 403 }
+        )
+      }
     }
-  }
-
-  const match = image.match(/^data:image\/(\w+);base64,/)
-  const extension = match ? match[1] : 'jpg'
-  const photoPath = `${user.id}/${randomUUID()}.${extension}`
-  const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
-  const photoBuffer = Buffer.from(base64Data, 'base64')
-
-  const { error: uploadError } = await supabase.storage
-    .from('user-photos')
-    .upload(photoPath, photoBuffer, { contentType: `image/${extension}` })
-
-  if (uploadError) {
-    console.error('Supabase storage upload error:', uploadError)
-    return NextResponse.json(
-      { error: "Échec de l'upload de la photo", reason: uploadError.message },
-      { status: 500 }
-    )
   }
 
   let result
@@ -112,6 +93,40 @@ async function handleAnalyze(request: Request) {
     .contains('for_skin_types', [result.skin_type])
 
   const recommendedProducts = (products ?? []).slice(0, 12)
+
+  if (!user) {
+    return NextResponse.json({
+      analysis: {
+        id: null,
+        skin_type: result.skin_type,
+        concerns: result.concerns,
+        undertone: result.undertone,
+        routine_morning: result.routine_morning,
+        routine_evening: result.routine_evening,
+        recommended_products: recommendedProducts,
+        full_result: result,
+        created_at: new Date().toISOString(),
+      },
+    })
+  }
+
+  const match = image.match(/^data:image\/(\w+);base64,/)
+  const extension = match ? match[1] : 'jpg'
+  const photoPath = `${user.id}/${randomUUID()}.${extension}`
+  const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
+  const photoBuffer = Buffer.from(base64Data, 'base64')
+
+  const { error: uploadError } = await supabase.storage
+    .from('user-photos')
+    .upload(photoPath, photoBuffer, { contentType: `image/${extension}` })
+
+  if (uploadError) {
+    console.error('Supabase storage upload error:', uploadError)
+    return NextResponse.json(
+      { error: "Échec de l'upload de la photo", reason: uploadError.message },
+      { status: 500 }
+    )
+  }
 
   const { data: analysis, error: insertError } = await supabase
     .from('analyses')

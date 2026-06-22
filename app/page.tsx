@@ -2,11 +2,11 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { AnalyzingOverlay } from '@/components/landing/analyzing-overlay'
 import { ExampleResultModal } from '@/components/landing/example-result-modal'
-import { SignupModal } from '@/components/landing/signup-modal'
 import { UploadZone } from '@/components/landing/upload-zone'
-import { createClient } from '@/lib/supabase/client'
+import { ANONYMOUS_ANALYSIS_KEY } from '@/components/dashboard/anonymous-paywall'
 
 const STEPS = [
   {
@@ -75,7 +75,7 @@ const FAQ = [
   },
 ]
 
-type FlowState = 'idle' | 'analyzing' | 'signup'
+type FlowState = 'idle' | 'analyzing'
 
 export default function Home() {
   const router = useRouter()
@@ -83,67 +83,32 @@ export default function Home() {
   const [image, setImage] = useState<string | null>(null)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [showExample, setShowExample] = useState(false)
-  const [loadingSignup, setLoadingSignup] = useState(false)
-  const [signupError, setSignupError] = useState<string | null>(null)
 
-  function handleFileSelected(dataUrl: string) {
+  async function handleFileSelected(dataUrl: string) {
     setImage(dataUrl)
     setFlowState('analyzing')
-    setTimeout(() => {
-      setFlowState('signup')
-    }, 5000)
-  }
 
-  async function handleSignup(email: string, password: string) {
-    setLoadingSignup(true)
-    setSignupError(null)
     try {
-      const supabase = createClient()
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-
-      if (signUpError) {
-        setSignupError(signUpError.message)
-        return
-      }
-
-      if (!signUpData.session) {
-        setSignupError(
-          'Confirme ton adresse e-mail via le lien que nous venons de t’envoyer, puis connecte-toi pour débloquer ton diagnostic.'
-        )
-        return
-      }
-
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image }),
+        body: JSON.stringify({ image: dataUrl }),
       })
 
+      const body = await res.json().catch(() => null)
+
       if (!res.ok) {
-        const body = await res.json().catch(() => null)
-        setSignupError(body?.error ?? 'Une erreur est survenue, réessaie.')
+        toast.error(body?.error ?? 'Une erreur est survenue, réessaie.')
+        setFlowState('idle')
         return
       }
 
+      sessionStorage.setItem(ANONYMOUS_ANALYSIS_KEY, JSON.stringify(body.analysis))
       router.push('/dashboard')
     } catch {
-      setSignupError('Une erreur est survenue, réessaie.')
-    } finally {
-      setLoadingSignup(false)
+      toast.error('Une erreur est survenue, réessaie.')
+      setFlowState('idle')
     }
-  }
-
-  async function handleGoogleSignup() {
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirectTo=/dashboard`,
-      },
-    })
   }
 
   return (
@@ -324,15 +289,6 @@ export default function Home() {
 
       {flowState === 'analyzing' && image && (
         <AnalyzingOverlay imageSrc={image} />
-      )}
-      {flowState === 'signup' && (
-        <SignupModal
-          onClose={() => setFlowState('idle')}
-          onSubmit={handleSignup}
-          onGoogleSignup={handleGoogleSignup}
-          loading={loadingSignup}
-          error={signupError}
-        />
       )}
       {showExample && (
         <ExampleResultModal onClose={() => setShowExample(false)} />

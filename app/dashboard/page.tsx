@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { AnonymousPaywall } from '@/components/dashboard/anonymous-paywall'
 import { getConcernInfo } from '@/components/dashboard/concern-icon'
 import { FollowupActions } from '@/components/dashboard/followup-actions'
 import { PaywallScreen } from '@/components/dashboard/paywall-screen'
@@ -17,7 +18,11 @@ function displayNameFromEmail(email: string) {
 export default async function DashboardPage() {
   const supabase = createClient()
   const { data: userData } = await supabase.auth.getUser()
-  const user = userData.user!
+  const user = userData.user
+
+  if (!user) {
+    return <AnonymousPaywall />
+  }
 
   const { data: profile } = await supabase
     .from('profiles')

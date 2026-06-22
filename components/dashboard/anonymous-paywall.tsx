@@ -1,0 +1,77 @@
+'use client'
+
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { getConcernInfo } from '@/components/dashboard/concern-icon'
+import { PaywallScreen } from '@/components/dashboard/paywall-screen'
+import type { AnalysisRow } from '@/types/analysis'
+
+export const ANONYMOUS_ANALYSIS_KEY = 'cleancare:lastAnalysis'
+
+type AnonymousAnalysis = Pick<
+  AnalysisRow,
+  | 'skin_type'
+  | 'undertone'
+  | 'full_result'
+  | 'concerns'
+  | 'routine_morning'
+  | 'routine_evening'
+  | 'recommended_products'
+  | 'created_at'
+>
+
+export function AnonymousPaywall() {
+  const [analysis, setAnalysis] = useState<AnonymousAnalysis | null | undefined>(
+    undefined
+  )
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem(ANONYMOUS_ANALYSIS_KEY)
+    setAnalysis(raw ? JSON.parse(raw) : null)
+  }, [])
+
+  if (analysis === undefined) return null
+
+  if (!analysis) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
+        <p className="font-mono text-xs uppercase tracking-wide text-terracotta">
+          Aucun diagnostic
+        </p>
+        <h1 className="mt-3 font-display text-2xl text-charcoal">
+          Tu n’as pas encore d’analyse.
+        </h1>
+        <Link
+          href="/"
+          className="mt-6 rounded-xl bg-terracotta px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+        >
+          Faire mon premier diagnostic
+        </Link>
+      </main>
+    )
+  }
+
+  const fullResult = analysis.full_result ?? {}
+  const formattedDate = new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(analysis.created_at))
+
+  return (
+    <PaywallScreen
+      anonymous
+      name=""
+      date={formattedDate}
+      skinType={analysis.skin_type ?? '—'}
+      undertone={analysis.undertone ?? '—'}
+      hydrationLevel={fullResult.hydration_level ?? null}
+      textureScore={fullResult.texture_score ?? null}
+      concerns={(analysis.concerns ?? []).map((concern) => getConcernInfo(concern).label)}
+      observation={fullResult.recommendations_summary ?? null}
+      productsCount={(analysis.recommended_products ?? []).length}
+      morningStepsCount={analysis.routine_morning?.length ?? 0}
+      eveningStepsCount={analysis.routine_evening?.length ?? 0}
+    />
+  )
+}

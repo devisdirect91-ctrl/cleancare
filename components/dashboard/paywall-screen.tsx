@@ -15,6 +15,7 @@ interface PaywallScreenProps {
   productsCount: number
   morningStepsCount: number
   eveningStepsCount: number
+  anonymous?: boolean
 }
 
 type Plan = 'annual' | 'monthly'
@@ -31,11 +32,16 @@ export function PaywallScreen({
   productsCount,
   morningStepsCount,
   eveningStepsCount,
+  anonymous = false,
 }: PaywallScreenProps) {
   const [plan, setPlan] = useState<Plan>('annual')
   const [loading, setLoading] = useState<Plan | 'lifetime' | null>(null)
 
   async function startCheckout(selected: Plan | 'lifetime') {
+    if (anonymous) {
+      window.location.href = '/auth/signup'
+      return
+    }
     setLoading(selected)
     try {
       const res = await fetch('/api/stripe/checkout', {
@@ -66,7 +72,7 @@ export function PaywallScreen({
             <em className="font-normal italic text-terracotta">aujourd’hui</em>
           </h1>
           <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.15em] text-[#8B8378]">
-            {name} · {date}
+            {name ? `${name} · ` : ''}{date}
           </p>
         </div>
 
