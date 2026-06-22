@@ -25,9 +25,12 @@ export function AnonymousPaywall() {
     undefined
   )
 
+  const [firstName, setFirstName] = useState<string>('')
+
   useEffect(() => {
     const raw = sessionStorage.getItem(ANONYMOUS_ANALYSIS_KEY)
     setAnalysis(raw ? JSON.parse(raw) : null)
+    setFirstName(sessionStorage.getItem('user_first_name') ?? '')
   }, [])
 
   if (analysis === undefined) return null
@@ -64,7 +67,7 @@ export function AnonymousPaywall() {
   return (
     <PaywallScreen
       anonymous
-      name=""
+      name={firstName}
       date={formattedDate}
       skinType={analysis.skin_type ?? '—'}
       undertone={analysis.undertone ?? '—'}
