@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Fraunces, Inter, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
+import { PostHogProvider } from '@/components/providers/PostHogProvider'
 import './globals.css'
 
 const fraunces = Fraunces({
@@ -37,7 +38,9 @@ export default function RootLayout({
       <body
         className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} bg-cream font-sans text-charcoal antialiased`}
       >
-        {children}
+        <PostHogProvider>
+          {children}
+        </PostHogProvider>
         <Toaster />
       </body>
     </html>
