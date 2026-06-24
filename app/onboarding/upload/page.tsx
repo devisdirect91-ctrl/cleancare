@@ -74,10 +74,10 @@ export default function UploadStep() {
     }
   }
 
-  if (!firstName) return <div className="min-h-screen bg-[#F4ECDD]" />
+  if (!firstName) return <div className="min-h-svh bg-[#F4ECDD]" />
 
   return (
-    <main className="flex min-h-screen flex-col bg-[#F4ECDD] px-5">
+    <main className="flex min-h-svh flex-col bg-[#F4ECDD] px-5">
       {/* Progress indicator */}
       <div className="mx-auto w-full max-w-md pt-12">
         <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.25em] text-stone">

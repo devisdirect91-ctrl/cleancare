@@ -6,7 +6,7 @@
 
 ---
 
-## Dashboard 1 : "Mira Acquisition"
+## Dashboard 1 : "LumiScan Acquisition"
 
 ### Insight 1 — Visites par jour
 | Champ | Valeur |
@@ -61,7 +61,7 @@
 
 ---
 
-## Dashboard 2 : "Mira Conversion"
+## Dashboard 2 : "LumiScan Conversion"
 
 ### Insight 6 — Funnel paywall → paid
 | Champ | Valeur |
@@ -103,7 +103,7 @@
 
 ---
 
-## Dashboard 3 : "Mira Retention"
+## Dashboard 3 : "LumiScan Retention"
 
 ### Insight 10 — Daily Active Users (DAU)
 | Champ | Valeur |
@@ -145,7 +145,7 @@
 
 ---
 
-## Dashboard 4 : "Mira Churn"
+## Dashboard 4 : "LumiScan Churn"
 
 ### Insight 14 — Cancellations par raison
 | Champ | Valeur |

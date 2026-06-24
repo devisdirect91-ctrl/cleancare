@@ -104,7 +104,7 @@ export function PaywallScreen({
   }
 
   return (
-    <main className="min-h-screen bg-[#F4ECDD] pb-16">
+    <main className="min-h-svh bg-[#F4ECDD] pb-[max(4rem,calc(env(safe-area-inset-bottom)+1rem))]">
       <div className="mx-auto max-w-md px-5 pt-10">
         {/* Header */}
         <div className="border-b border-[#E5DCC8] pb-6 text-center">

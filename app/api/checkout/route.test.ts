@@ -171,7 +171,7 @@ describe('POST /api/checkout', () => {
     expect(mockStripeCustomerCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         email: 'new@user.com',
-        metadata: { user_id: 'user-2', app: 'mira' },
+        metadata: { user_id: 'user-2', app: 'lumiscan' },
       })
     )
     expect(mockSupabaseUpdate).toHaveBeenCalled()

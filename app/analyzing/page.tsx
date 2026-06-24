@@ -186,7 +186,7 @@ export default function AnalyzingPage() {
   // --- Écran d'erreur bienveillant ---------------------------------------
   if (error) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-cream px-7 text-center">
+      <main className="flex min-h-svh flex-col items-center justify-center bg-cream px-7 text-center">
         <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.25em] text-terracotta">
           Petit contretemps
         </p>
@@ -214,7 +214,7 @@ export default function AnalyzingPage() {
     : 'On analyse ta peau…'
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-cream px-7">
+    <main className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-cream px-7">
       {/* Loader (reste actif en arrière-plan, même modal ouverte) */}
       <div className="flex flex-col items-center text-center">
         <div className="relative mb-10 h-20 w-20">
@@ -252,7 +252,10 @@ export default function AnalyzingPage() {
           className={`fixed inset-0 z-20 flex items-end justify-center sm:items-center ${
             modalClosing ? 'overlay-out' : 'overlay-in'
           }`}
-          style={{ backgroundColor: 'rgba(31,27,22,0.35)' }}
+          style={{
+            backgroundColor: 'rgba(31,27,22,0.35)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          }}
         >
           <div
             className={`m-4 w-full max-w-sm rounded-[28px] bg-[#FFFCF6] p-7 shadow-[0_20px_60px_-20px_rgba(31,27,22,0.45)] ${

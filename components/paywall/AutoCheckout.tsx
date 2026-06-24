@@ -32,7 +32,7 @@ export function AutoCheckout({ plan }: { plan: PlanKey }) {
 
   if (error) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F4ECDD] px-6 text-center">
+      <main className="flex min-h-svh items-center justify-center bg-[#F4ECDD] px-6 text-center">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-terracotta">
             Erreur
@@ -50,7 +50,7 @@ export function AutoCheckout({ plan }: { plan: PlanKey }) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#F4ECDD]">
+    <main className="flex min-h-svh items-center justify-center bg-[#F4ECDD]">
       <div className="text-center">
         <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[#E5DCC8] border-t-terracotta" />
         <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone">

@@ -48,7 +48,7 @@ export function AnonymousPaywall() {
 
   if (!analysis) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
+      <main className="mx-auto flex min-h-svh max-w-md flex-col items-center justify-center px-6 text-center">
         <p className="font-mono text-xs uppercase tracking-wide text-terracotta">
           Aucun diagnostic
         </p>

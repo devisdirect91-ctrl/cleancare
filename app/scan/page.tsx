@@ -32,7 +32,7 @@ function Wordmark({ className = '' }: { className?: string }) {
     <span
       className={`font-display text-[22px] font-medium tracking-tight ${className}`}
     >
-      Mira
+      LumiScan
     </span>
   )
 }
@@ -190,7 +190,7 @@ export default function ScanPage() {
   if (showInAppWarning) {
     return (
       <main
-        className="flex min-h-screen flex-col items-center justify-center px-7 text-center"
+        className="flex min-h-svh flex-col items-center justify-center px-7 text-center"
         style={{ backgroundColor: INK, color: CREAM }}
       >
         <Wordmark className="mb-12" />
@@ -201,7 +201,7 @@ export default function ScanPage() {
           <Camera className="h-9 w-9" strokeWidth={1.5} style={{ color: TERRACOTTA }} />
         </div>
         <h1 className="mb-4 max-w-xs font-display text-[28px] font-medium leading-[1.12] tracking-tight">
-          Pour scanner ta peau, ouvre Mira dans ton navigateur
+          Pour scanner ta peau, ouvre LumiScan dans ton navigateur
         </h1>
         <p
           className="mb-10 max-w-xs text-[15px] leading-relaxed"
@@ -245,7 +245,7 @@ export default function ScanPage() {
         />
 
         {/* Header */}
-        <header className="absolute inset-x-0 top-0 flex items-center justify-between px-5 pt-6">
+        <header className="absolute inset-x-0 top-0 flex items-center justify-between px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
           <button
             onClick={handleClose}
             aria-label="Fermer"
@@ -348,7 +348,7 @@ export default function ScanPage() {
         </div>
 
         {/* Bouton capture */}
-        <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-5 pb-10">
+        <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-5 pb-[max(2.5rem,calc(env(safe-area-inset-bottom)+1rem))]">
           <p
             className="font-mono text-[10px] uppercase tracking-[0.22em]"
             style={{ color: 'rgba(250,246,238,0.85)' }}
@@ -452,7 +452,7 @@ export default function ScanPage() {
 
     return (
       <main
-        className="flex min-h-screen flex-col items-center px-7 pb-10 pt-14 text-center"
+        className="flex min-h-svh flex-col items-center px-7 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-14 text-center"
         style={{ backgroundColor: INK, color: CREAM }}
       >
         {hiddenFileInput}
@@ -537,7 +537,7 @@ export default function ScanPage() {
   const requesting = status === 'requesting'
   return (
     <main
-      className="flex min-h-screen flex-col items-center px-7 pb-10 pt-14 text-center"
+      className="flex min-h-svh flex-col items-center px-7 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-14 text-center"
       style={{ backgroundColor: INK, color: CREAM }}
     >
       {hiddenFileInput}

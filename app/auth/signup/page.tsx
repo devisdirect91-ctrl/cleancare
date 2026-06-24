@@ -84,7 +84,7 @@ function SignupForm() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
+    <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center px-6">
       <h1 className="font-display text-2xl text-charcoal">
         Créer un compte
       </h1>
@@ -95,7 +95,7 @@ function SignupForm() {
           placeholder="Adresse e-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-xl border border-charcoal/15 bg-white px-4 py-3 text-sm text-charcoal placeholder:text-stone focus:border-terracotta focus:outline-none"
+          className="w-full rounded-xl border border-charcoal/15 bg-white px-4 py-3 text-base text-charcoal placeholder:text-stone focus:border-terracotta focus:outline-none"
         />
         <input
           type="password"
@@ -103,7 +103,7 @@ function SignupForm() {
           placeholder="Mot de passe"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-xl border border-charcoal/15 bg-white px-4 py-3 text-sm text-charcoal placeholder:text-stone focus:border-terracotta focus:outline-none"
+          className="w-full rounded-xl border border-charcoal/15 bg-white px-4 py-3 text-base text-charcoal placeholder:text-stone focus:border-terracotta focus:outline-none"
         />
         {error && <p className="text-sm text-terracotta">{error}</p>}
         <button

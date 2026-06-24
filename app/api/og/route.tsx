@@ -93,7 +93,7 @@ export async function GET(request: Request) {
             alignSelf: 'flex-end',
           }}
         >
-          Mira
+          LumiScan
         </span>
       </div>
     ),

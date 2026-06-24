@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Mira · Analyse ta peau en 30 secondes',
+  title: 'LumiScan · Analyse ta peau en 30 secondes',
   description:
     'Scan personnalisé de ta peau et routine skincare sur-mesure. Gratuit.',
   openGraph: {
-    title: 'Mira · Analyse ta peau en 30 secondes',
+    title: 'LumiScan · Analyse ta peau en 30 secondes',
     description:
       'Scan personnalisé de ta peau et routine skincare sur-mesure. Gratuit.',
     type: 'website',
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Mira · Analyse ta peau en 30 secondes',
+    title: 'LumiScan · Analyse ta peau en 30 secondes',
     description:
       'Scan personnalisé de ta peau et routine skincare sur-mesure. Gratuit.',
     images: ['/og-scan.png'],
