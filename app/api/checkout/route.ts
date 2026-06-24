@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
       metadata: { user_id: user.id, plan_type: plan },
-      success_url: `${appUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${appUrl}/routine?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/paywall?checkout=canceled`,
     }
 

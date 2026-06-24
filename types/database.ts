@@ -19,6 +19,16 @@ export interface Profile {
   current_period_end: string | null
   lifetime_purchased_at: string | null
   cancel_at_period_end: boolean
+  active_analysis_id: string | null
+}
+
+export interface RoutineLog {
+  id: string
+  user_id: string
+  log_date: string
+  slot: 'morning' | 'evening'
+  step_index: number
+  created_at: string
 }
 
 export interface Analysis {
