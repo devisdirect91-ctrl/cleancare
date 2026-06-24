@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Camera, ImageUp, Sun, Sparkles, Wind, X } from 'lucide-react'
 import { trackEvent } from '@/lib/analytics/posthog'
@@ -537,10 +538,18 @@ export default function ScanPage() {
   const requesting = status === 'requesting'
   return (
     <main
-      className="flex min-h-svh flex-col items-center px-7 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-14 text-center"
+      className="relative flex min-h-svh flex-col items-center px-7 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-14 text-center"
       style={{ backgroundColor: INK, color: CREAM }}
     >
       {hiddenFileInput}
+      <Link
+        href="/auth/login"
+        onClick={() => trackEvent('scan_login_clicked')}
+        className="absolute right-6 top-[max(1.25rem,env(safe-area-inset-top))] font-mono text-[11px] uppercase tracking-[0.18em] underline underline-offset-4 transition-opacity hover:opacity-70"
+        style={{ color: 'rgba(250,246,238,0.75)' }}
+      >
+        Se connecter
+      </Link>
       <Wordmark />
 
       <div className="flex flex-1 flex-col items-center justify-center">
