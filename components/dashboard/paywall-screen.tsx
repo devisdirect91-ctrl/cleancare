@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, Lock } from 'lucide-react'
+import { Check, Gift, Lock } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { trackEvent } from '@/lib/analytics/posthog'
 
@@ -49,6 +49,11 @@ export function PaywallScreen({
     setPlan(next)
     trackEvent('plan_selected', { plan: next })
   }
+
+  // Nombre de produits = une étape de routine = un produit. Toujours fiable,
+  // contrairement à recommended_products qui peut être vide si le matching
+  // produits a échoué (cause du bug "0 produits").
+  const productCount = morningStepsCount + eveningStepsCount || productsCount
 
   useEffect(() => {
     const el = pricingRef.current
@@ -206,30 +211,27 @@ export function PaywallScreen({
         {/* Paywall card */}
         <div ref={pricingRef} className="mt-7">
           <div className="relative rounded-[24px] border-[1.5px] border-[#E8C9BC] bg-gradient-to-b from-[#FFFCF6] to-[#EDE3D0] p-6 text-center shadow-[0_20px_50px_-15px_rgba(200,117,90,0.25)]">
-            <div className="relative mx-auto mb-3.5 flex h-12 w-12 items-center justify-center rounded-full bg-[#1F1B16] before:absolute before:-inset-1 before:rounded-full before:border before:border-dashed before:border-terracotta">
-              <Lock className="h-5 w-5 text-[#FFFCF6]" strokeWidth={2} />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-terracotta shadow-[0_8px_20px_-6px_rgba(200,117,90,0.5)]">
+              <Gift className="h-6 w-6 text-[#FFFCF6]" strokeWidth={1.8} />
             </div>
 
-            <span className="mb-3 inline-block rounded-full bg-[#C8D2BF] px-2.5 py-1 font-mono text-[9px] font-semibold uppercase tracking-[0.15em] text-[#8A9A82]">
-              7 jours gratuits
-            </span>
-
-            <h2 className="font-display text-[22px] leading-[1.15] tracking-tight text-[#1F1B16]">
-              Débloque
-              <br />
-              <em className="italic text-terracotta">
-                {name ? `ta routine, ${name}` : 'ta routine complète'}
-              </em>
+            <h2 className="font-display text-[26px] leading-[1.1] tracking-tight text-[#1F1B16]">
+              Commence{' '}
+              <em className="font-normal italic text-terracotta">gratuitement</em>
             </h2>
 
-            <p className="mx-auto mt-2.5 max-w-[280px] text-[13px] leading-relaxed text-[#4A4238]">
-              Ta routine personnalisée matin et soir t’attend, avec les produits
-              adaptés à TA peau.
+            <span className="mt-3 inline-block rounded-full bg-[#D7E0CC] px-4 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[#5E7350]">
+              ✨ 7 jours offerts
+            </span>
+
+            <p className="mx-auto mt-3 max-w-[290px] text-[13.5px] leading-relaxed text-[#4A4238]">
+              Découvre ta routine complète personnalisée. Sans engagement, annule
+              quand tu veux.
             </p>
 
             <ul className="mb-6 mt-5 space-y-2 text-left">
               <Feature>
-                <strong>{productsCount} produits</strong> sélectionnés pour ta peau{' '}
+                <strong>{productCount} produits</strong> sélectionnés pour ta peau{' '}
                 {skinType}
               </Feature>
               <Feature>
@@ -255,17 +257,14 @@ export function PaywallScreen({
                 label="Annuel"
                 sub="Soit 4,08 €/mois"
                 savings="Économise 47 €"
-                amount="49 €"
-                amountSuffix="/an"
-                strike="96 €"
+                recurring="puis 49 €/an"
               />
               <PriceOption
                 selected={plan === 'monthly'}
                 onSelect={() => selectPlan('monthly')}
                 label="Mensuel"
                 sub="Sans engagement"
-                amount="7,99 €"
-                amountSuffix="/mois"
+                recurring="puis 7,99 €/mois"
               />
             </div>
 
@@ -274,14 +273,19 @@ export function PaywallScreen({
               disabled={loading !== null}
               className="mb-2.5 block w-full rounded-full bg-[#1F1B16] py-[15px] text-sm font-semibold text-[#FFFCF6] shadow-[0_8px_20px_-6px_rgba(31,27,22,0.3)] transition-opacity disabled:opacity-60"
             >
-              {loading === plan
-                ? 'Redirection…'
-                : 'Commencer mon essai gratuit'}
+              {loading === plan ? 'Redirection…' : 'Commencer gratuitement'}
             </button>
             <p className="mb-2.5 text-[11px] leading-relaxed text-[#8B8378]">
-              Aucun débit pendant 7 jours · Annule à tout moment
+              On te prévient par email avant la fin de ton essai · Annule en
+              1 clic · Aucune mauvaise surprise.
             </p>
-            <button className="text-xs text-[#8B8378] underline underline-offset-2">
+            <button
+              onClick={() => {
+                trackEvent('checkout_dismissed', { plan_was_selected: plan })
+                if (typeof window !== 'undefined') window.history.back()
+              }}
+              className="text-xs text-[#8B8378] underline underline-offset-2"
+            >
               Pas maintenant
             </button>
 
@@ -393,9 +397,7 @@ function PriceOption({
   label,
   sub,
   savings,
-  amount,
-  amountSuffix,
-  strike,
+  recurring,
 }: {
   selected: boolean
   onSelect: () => void
@@ -403,9 +405,7 @@ function PriceOption({
   label: string
   sub: string
   savings?: string
-  amount: string
-  amountSuffix: string
-  strike?: string
+  recurring: string
 }) {
   return (
     <button
@@ -449,17 +449,13 @@ function PriceOption({
         </div>
       </div>
       <div className="text-right">
-        <p className="font-display text-[19px] font-semibold leading-tight tracking-tight text-[#1F1B16]">
-          {amount}
-          <small className="text-[11px] font-sans font-normal text-[#8B8378]">
-            {amountSuffix}
-          </small>
+        <p className="font-mono text-[8px] uppercase tracking-[0.14em] text-[#8A9A82]">
+          Aujourd’hui
         </p>
-        {strike && (
-          <p className="mt-0.5 text-[11px] text-[#8B8378] line-through">
-            {strike}
-          </p>
-        )}
+        <p className="font-display text-[27px] font-semibold leading-none tracking-tight text-[#1F1B16]">
+          0 €
+        </p>
+        <p className="mt-1 text-[11px] text-[#8B8378]">{recurring}</p>
       </div>
     </button>
   )
