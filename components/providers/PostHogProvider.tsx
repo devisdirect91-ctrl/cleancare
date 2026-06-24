@@ -18,40 +18,47 @@ function PostHogInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         if (!session?.user) return
+        const user = session.user
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name, subscription_status, subscription_plan, created_at')
-          .eq('id', session.user.id)
-          .single()
+        // IMPORTANT : ne jamais await d'appel Supabase directement dans ce
+        // callback — supabase-js détient un verrou (navigator.locks) pendant
+        // son exécution, ce qui peut bloquer signInWithPassword à l'infini.
+        // On défère le travail asynchrone hors du verrou via setTimeout(0).
+        setTimeout(async () => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, subscription_status, subscription_plan, created_at')
+            .eq('id', user.id)
+            .single()
 
-        if (!profile) return
+          if (!profile) return
 
-        // Track when a canceled user comes back
-        if (profile.subscription_status === 'canceled') {
-          const sessionKey = 'ph:canceled_returned_tracked'
-          if (!sessionStorage.getItem(sessionKey)) {
-            sessionStorage.setItem(sessionKey, '1')
-            trackEvent('canceled_user_returned')
+          // Track when a canceled user comes back
+          if (profile.subscription_status === 'canceled') {
+            const sessionKey = 'ph:canceled_returned_tracked'
+            if (!sessionStorage.getItem(sessionKey)) {
+              sessionStorage.setItem(sessionKey, '1')
+              trackEvent('canceled_user_returned')
+            }
           }
-        }
 
-        identifyUser(session.user.id, {
-          email: session.user.email,
-          first_name: profile.first_name,
-          subscription_status: profile.subscription_status,
-          subscription_plan: profile.subscription_plan,
-          is_premium: ['trialing', 'active', 'lifetime'].includes(
-            profile.subscription_status ?? ''
-          ),
-          signup_date: profile.created_at,
-          days_since_signup: Math.floor(
-            (Date.now() - new Date(profile.created_at).getTime()) /
-              (1000 * 60 * 60 * 24)
-          ),
-        })
+          identifyUser(user.id, {
+            email: user.email,
+            first_name: profile.first_name,
+            subscription_status: profile.subscription_status,
+            subscription_plan: profile.subscription_plan,
+            is_premium: ['trialing', 'active', 'lifetime'].includes(
+              profile.subscription_status ?? ''
+            ),
+            signup_date: profile.created_at,
+            days_since_signup: Math.floor(
+              (Date.now() - new Date(profile.created_at).getTime()) /
+                (1000 * 60 * 60 * 24)
+            ),
+          })
+        }, 0)
       }
     )
 
