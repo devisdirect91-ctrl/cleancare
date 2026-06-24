@@ -74,8 +74,10 @@ export function useCamera() {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'user',
-          width: { ideal: 1080 },
-          height: { ideal: 1920 },
+          // 4:3 = aspect natif des caméras frontales → champ de vision complet.
+          // Forcer du portrait 9:16 recadrait le capteur (effet "zoom" sur mobile).
+          width: { ideal: 1280 },
+          height: { ideal: 960 },
         },
         audio: false,
       })
