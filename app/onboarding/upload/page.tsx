@@ -20,7 +20,7 @@ export default function UploadStep() {
   useEffect(() => {
     const stored = sessionStorage.getItem('user_first_name')
     if (!stored) {
-      router.replace('/onboarding/name')
+      router.replace('/scan')
       return
     }
     setFirstName(stored)

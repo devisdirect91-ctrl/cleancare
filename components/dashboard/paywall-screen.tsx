@@ -45,6 +45,11 @@ export function PaywallScreen({
   const [loading, setLoading] = useState<Plan | 'lifetime' | null>(null)
   const pricingRef = useRef<HTMLDivElement>(null)
 
+  function selectPlan(next: Plan) {
+    setPlan(next)
+    trackEvent('plan_selected', { plan: next })
+  }
+
   useEffect(() => {
     const el = pricingRef.current
     if (!el) return
@@ -109,10 +114,12 @@ export function PaywallScreen({
           <h1 className="mt-4 font-display text-[32px] leading-[1.05] tracking-tight text-[#1F1B16]">
             Ta peau,
             <br />
-            <em className="font-normal italic text-terracotta">aujourd’hui</em>
+            <em className="font-normal italic text-terracotta">
+              {name ? name : 'aujourd’hui'}
+            </em>
           </h1>
           <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.15em] text-[#8B8378]">
-            {name ? `${name} · ` : ''}{date}
+            {name ? `Pour ${name} · ` : ''}{date}
           </p>
         </div>
 
@@ -210,7 +217,9 @@ export function PaywallScreen({
             <h2 className="font-display text-[22px] leading-[1.15] tracking-tight text-[#1F1B16]">
               Débloque
               <br />
-              <em className="italic text-terracotta">ta routine complète</em>
+              <em className="italic text-terracotta">
+                {name ? `ta routine, ${name}` : 'ta routine complète'}
+              </em>
             </h2>
 
             <p className="mx-auto mt-2.5 max-w-[280px] text-[13px] leading-relaxed text-[#4A4238]">
@@ -241,7 +250,7 @@ export function PaywallScreen({
             <div className="mb-4 flex flex-col gap-2">
               <PriceOption
                 selected={plan === 'yearly'}
-                onSelect={() => setPlan('yearly')}
+                onSelect={() => selectPlan('yearly')}
                 badge="Recommandé"
                 label="Annuel"
                 sub="Soit 4,08 €/mois"
@@ -252,7 +261,7 @@ export function PaywallScreen({
               />
               <PriceOption
                 selected={plan === 'monthly'}
-                onSelect={() => setPlan('monthly')}
+                onSelect={() => selectPlan('monthly')}
                 label="Mensuel"
                 sub="Sans engagement"
                 amount="7,99 €"

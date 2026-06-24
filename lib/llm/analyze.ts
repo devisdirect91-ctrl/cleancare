@@ -2,31 +2,41 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-const SYSTEM_PROMPT = `Tu es un assistant cosmétique professionnel (PAS médical, PAS dermatologique).
-Analyse la photo de visage fournie et retourne un JSON strict :
+// NB : on conserve les noms de champs `recommendations_summary`,
+// `ingredients_to_seek` et `ingredients_to_avoid` (et non `observation` /
+// `ingredients_seek` / `ingredients_avoid`) car le dashboard, la paywall,
+// la route OG et lib/diagnostic les lisent déjà depuis full_result.
+const SYSTEM_PROMPT = `Tu es un assistant cosmétique professionnel bienveillant (PAS médical, PAS dermatologique). Analyse cette photo de visage et retourne UNIQUEMENT un JSON valide, sans markdown, sans texte avant ou après.
 
+Si la photo ne montre pas clairement un visage, retourne :
+{"error": "no_face", "message": "On n'arrive pas à bien voir ton visage. Reprends une photo en pleine lumière."}
+
+Sinon retourne exactement cette structure :
 {
   "skin_type": "sèche|mixte|grasse|normale|sensible",
-  "concerns": ["acné_légère", "déshydratation", "pores_dilatés", "rougeurs",
-               "ridules", "taches", "ternissement"],  // tableau, peut être vide
   "undertone": "chaud|froid|neutre",
-  "hydration_level": 1-10,
-  "texture_score": 1-10,
-  "recommendations_summary": "2-3 phrases bienveillantes décrivant ce que tu observes",
+  "hydration_level": <1-10>,
+  "texture_score": <1-10>,
+  "concerns": [<liste parmi: "déshydratation", "acné_légère", "pores_dilatés", "rougeurs", "ridules", "taches", "ternissement">],
+  "recommendations_summary": "<2-3 phrases bienveillantes décrivant ce que tu observes. Reste positive et encourageante. Pas de jugement, pas de notation globale.>",
   "routine_morning": [
-    {"step": 1, "category": "nettoyant doux", "reason": "..."},
-    {"step": 2, "category": "sérum hydratant", "reason": "..."}
+    {"step": 1, "category": "<catégorie produit>", "reason": "<pourquoi pour cette peau>"}
   ],
-  "routine_evening": [...],
-  "ingredients_to_seek": ["acide hyaluronique", "niacinamide"],
-  "ingredients_to_avoid": ["alcool dénaturé"]
+  "routine_evening": [
+    {"step": 1, "category": "<catégorie produit>", "reason": "<pourquoi pour cette peau>"}
+  ],
+  "ingredients_to_seek": [<3-4 actifs adaptés>],
+  "ingredients_to_avoid": [<3-4 ingrédients à limiter>]
 }
 
-IMPORTANT :
+routine_morning compte 3 à 4 étapes, routine_evening compte 3 étapes.
+
+RÈGLES STRICTES :
+- Reste TOUJOURS dans des recommandations simples et sûres (nettoyant doux, hydratant, SPF, 1-2 actifs doux max comme niacinamide ou acide hyaluronique).
+- Ne recommande JAMAIS de rétinol fort, acides exfoliants concentrés, ou traitements agressifs.
+- Si tu détectes une condition qui semble sévère (acné kystique importante, rougeurs type rosacée marquée, lésions suspectes), ajoute "consultation_recommandée" dans concerns et mets dans recommendations_summary une suggestion douce de consulter un dermatologue.
+- Reste cosmétique, jamais médical. Tu observes, tu ne diagnostiques pas.
 - Reste BIENVEILLANT, jamais critique. Pas de score général, pas de notation.
-- Ne diagnostique aucune pathologie. Tu observes, tu ne diagnostiques pas.
-- Si la photo est de mauvaise qualité ou ne montre pas un visage, retourne
-  {"error": "Photo invalide", "reason": "..."}.
 - Réponds UNIQUEMENT en JSON valide, sans markdown.`
 
 export interface RoutineStep {
@@ -69,27 +79,31 @@ export async function analyzeSkin(
 
   let response
   try {
-    response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif',
-                data: base64,
+    response = await anthropic.messages.create(
+      {
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2048,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif',
+                  data: base64,
+                },
               },
-            },
-            { type: 'text', text: 'Analyse cette photo de visage.' },
-          ],
-        },
-      ],
-    })
+              { type: 'text', text: 'Analyse cette photo de visage.' },
+            ],
+          },
+        ],
+      },
+      // Timeout 30s max pour l'appel Anthropic.
+      { timeout: 30_000 }
+    )
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
       throw new RateLimitedError('Rate limited')
@@ -105,9 +119,25 @@ export async function analyzeSkin(
     return { error: 'Photo invalide', reason: 'Aucune réponse exploitable.' }
   }
 
+  let parsed: unknown
   try {
-    return JSON.parse(textBlock.text)
+    parsed = JSON.parse(textBlock.text)
   } catch {
     return { error: 'Photo invalide', reason: 'Réponse non exploitable.' }
   }
+
+  // Le modèle signale une erreur structurée (ex: no_face). On expose le
+  // message lisible dans `error` (affiché au client) et le code dans `reason`.
+  if (parsed && typeof parsed === 'object' && 'error' in parsed) {
+    const e = parsed as { error?: unknown; message?: unknown; reason?: unknown }
+    return {
+      error:
+        (typeof e.message === 'string' && e.message) ||
+        (typeof e.reason === 'string' && e.reason) ||
+        'Photo invalide',
+      reason: typeof e.error === 'string' ? e.error : 'invalid',
+    }
+  }
+
+  return parsed as SkinAnalysis
 }

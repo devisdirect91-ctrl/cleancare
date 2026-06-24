@@ -38,7 +38,7 @@ export default async function DashboardPage() {
           Tu n’as pas encore d’analyse.
         </h1>
         <Link
-          href="/"
+          href="/scan"
           className="mt-6 rounded-xl bg-terracotta px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
         >
           Faire mon premier diagnostic

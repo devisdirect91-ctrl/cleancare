@@ -10,10 +10,7 @@ export async function POST(request: Request) {
     return await handleAnalyze(request)
   } catch (err) {
     console.error('Unhandled error in /api/analyze:', err)
-    const message = err instanceof Error ? err.message : String(err)
-    const stack = err instanceof Error ? err.stack : undefined
-    // TEMPORARY: surfacing the raw error for debugging — remove once stable.
-    return NextResponse.json({ error: 'Erreur serveur', debug: { message, stack } }, { status: 500 })
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
 
@@ -23,7 +20,9 @@ async function handleAnalyze(request: Request) {
   const { data: userData } = await supabase.auth.getUser()
   const user = userData.user
 
-  const { image } = await request.json()
+  // Le scan caméra envoie `photo`; l'ancien flow d'upload envoie `image`.
+  const body = await request.json()
+  const image: unknown = body?.photo ?? body?.image
   if (!image || typeof image !== 'string') {
     return NextResponse.json({ error: 'Photo manquante' }, { status: 400 })
   }

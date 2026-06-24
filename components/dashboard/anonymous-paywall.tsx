@@ -36,6 +36,7 @@ export function AnonymousPaywall() {
 
     if (parsed) {
       trackEvent('result_viewed', {
+        is_premium: false,
         has_subscription: false,
         skin_type: parsed.skin_type ?? null,
         concerns_count: parsed.concerns?.length ?? 0,
