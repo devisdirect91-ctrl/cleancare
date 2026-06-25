@@ -39,6 +39,19 @@ RÈGLES STRICTES :
 - Reste BIENVEILLANT, jamais critique. Pas de score général, pas de notation.
 - Réponds UNIQUEMENT en JSON valide, sans markdown.`
 
+// Contraint le LLM à choisir `category` dans la liste EXACTE du catalogue,
+// pour que le matching produits côté serveur fonctionne (sinon il renvoie des
+// libellés descriptifs type "Nettoyant doux gel ou mousse" → 0 produit matché).
+function buildSystemPrompt(categories: string[]): string {
+  if (categories.length === 0) return SYSTEM_PROMPT
+  return (
+    SYSTEM_PROMPT +
+    `\n\nCATÉGORIES PRODUITS AUTORISÉES — le champ "category" de CHAQUE étape (routine_morning ET routine_evening) DOIT être EXACTEMENT l'un de ces libellés, copié tel quel, sans aucun ajout ni reformulation :\n${categories
+      .map((c) => `- ${c}`)
+      .join('\n')}\nMets toute précision (texture, actif comme niacinamide/acide hyaluronique, SPF, etc.) dans "reason", JAMAIS dans "category".`
+  )
+}
+
 export interface RoutineStep {
   step: number
   category: string
@@ -73,7 +86,8 @@ function parseDataUrl(dataUrl: string): { mediaType: string; base64: string } {
 }
 
 export async function analyzeSkin(
-  imageBase64: string
+  imageBase64: string,
+  categories: string[] = []
 ): Promise<SkinAnalysis | SkinAnalysisError> {
   const { mediaType, base64 } = parseDataUrl(imageBase64)
 
@@ -83,7 +97,7 @@ export async function analyzeSkin(
       {
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,
-        system: SYSTEM_PROMPT,
+        system: buildSystemPrompt(categories),
         messages: [
           {
             role: 'user',

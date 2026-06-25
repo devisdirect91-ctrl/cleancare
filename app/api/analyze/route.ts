@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { NextResponse } from 'next/server'
 import { analyzeSkin, LLMConfigError, RateLimitedError, type RoutineStep } from '@/lib/llm/analyze'
 import { createClient } from '@/lib/supabase/server'
+import type { RecommendedProduct } from '@/types/analysis'
 
 const TRIAL_ANALYSIS_LIMIT = 3
 
@@ -52,9 +53,16 @@ async function handleAnalyze(request: Request) {
     }
   }
 
+  // Catégories réelles du catalogue : on les passe au LLM (pour qu'il s'y tienne)
+  // et on s'en sert pour matcher les produits.
+  const { data: catRows } = await supabase.from('products').select('category')
+  const catalogCategories = Array.from(
+    new Set((catRows ?? []).map((r) => r.category as string).filter(Boolean))
+  )
+
   let result
   try {
-    result = await analyzeSkin(image)
+    result = await analyzeSkin(image, catalogCategories)
   } catch (err) {
     if (err instanceof RateLimitedError) {
       return NextResponse.json(
@@ -80,18 +88,55 @@ async function handleAnalyze(request: Request) {
     )
   }
 
-  const categories = [
+  // Associe chaque catégorie de routine (libellé renvoyé par le LLM) à une
+  // catégorie réelle du catalogue : égalité normalisée (accents/casse/espaces),
+  // sinon inclusion d'un libellé dans l'autre (filet de sécurité).
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+  const routineCategories = [
     ...result.routine_morning.map((s: RoutineStep) => s.category),
     ...result.routine_evening.map((s: RoutineStep) => s.category),
   ]
+  const matched = new Set<string>()
+  for (const raw of routineCategories) {
+    const n = norm(raw)
+    let hit = catalogCategories.find((c) => norm(c) === n)
+    if (!hit) {
+      hit = catalogCategories.find(
+        (c) => n.includes(norm(c)) || norm(c).includes(n)
+      )
+    }
+    if (hit) matched.add(hit)
+  }
+  const matchedCategories = [...matched]
 
-  const { data: products } = await supabase
-    .from('products')
-    .select('id, name, brand, category, price_eur, for_skin_types, affiliate_url, image_url')
-    .in('category', categories)
-    .contains('for_skin_types', [result.skin_type])
+  const PRODUCT_FIELDS =
+    'id, name, brand, category, price_eur, for_skin_types, affiliate_url, image_url'
 
-  const recommendedProducts = (products ?? []).slice(0, 12)
+  let recommendedProducts: RecommendedProduct[] = []
+  if (matchedCategories.length > 0) {
+    const { data: products } = await supabase
+      .from('products')
+      .select(PRODUCT_FIELDS)
+      .in('category', matchedCategories)
+      .contains('for_skin_types', [result.skin_type])
+    let rows = (products ?? []) as RecommendedProduct[]
+    // Repli : si rien pour ce type de peau, on garde au moins le match catégorie.
+    if (rows.length === 0) {
+      const { data: relaxed } = await supabase
+        .from('products')
+        .select(PRODUCT_FIELDS)
+        .in('category', matchedCategories)
+      rows = (relaxed ?? []) as RecommendedProduct[]
+    }
+    recommendedProducts = rows.slice(0, 12)
+  }
 
   if (!user) {
     return NextResponse.json({
